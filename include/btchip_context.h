@@ -127,13 +127,20 @@ struct btchip_transaction_context_s {
     unsigned char transactionState;
     /** Computed sum of transaction inputs or value of the output to convert to
      * a trusted input */
-    unsigned char transactionAmount[8];
+    unsigned char transactionAmount[33];
     /** Flag indicating if this transaction has been processed before */
     unsigned char firstSigned;
     /** If the transaction is relaxed */
     unsigned char relaxed;
     /** If the transaction consumes a P2SH input */
     unsigned char consumeP2SH;
+    /** For DGLD transactions: */
+    /** A flag */
+    unsigned char transactionFlag;
+    /** The asset type */
+    unsigned char transactionAsset[33];
+    /** Transaction output nonce */
+    unsigned char transactionOutputNonce[33];    
 };
 typedef struct btchip_transaction_context_s btchip_transaction_context_t;
 
@@ -270,6 +277,7 @@ typedef enum btchip_coin_kind_e {
     COIN_KIND_BITCOIN,
     COIN_KIND_BITCOIN_CASH,
     COIN_KIND_BITCOIN_GOLD,
+    COIN_KIND_DGLD,
     COIN_KIND_LITECOIN,
     COIN_KIND_DOGE,
     COIN_KIND_DASH,
