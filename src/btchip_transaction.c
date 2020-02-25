@@ -239,7 +239,7 @@ void transaction_parse(unsigned char parseMode) {
                     }
 
 /*
-    Ocean Transaction sample - header
+    DGLD Transaction sample - header
     02000000    version
     01          flag
 
@@ -272,8 +272,8 @@ void transaction_parse(unsigned char parseMode) {
                         }
                     }
 
-		    //If using OCEAN, the next byte to read in will be a 'flag'.
-                    if(G_coin_config->kind == COIN_KIND_OCEAN){
+		    //If using DGLD, the next byte to read in will be a 'flag'.
+                    if(G_coin_config->kind == COIN_KIND_DGLD){
                         //Flag
                         const unsigned int varsizebytes=1;
                         check_transaction_available(varsizebytes);
@@ -296,13 +296,13 @@ void transaction_parse(unsigned char parseMode) {
                 }
 
 /*
-    Ocean transaction sample - inputs
+    DGLD transaction sample - inputs
 
     0000000000000000000000000000000000000000000000000000000000000000    vin prevhash
     ffffffff    vin prev_idx
     03  530101  script
     ffffffff    sequence
-        - issuance example (if prev_idx & TxInputOcean.OUTPOINT_ISSUANCE_FLAG)
+        - issuance example (if prev_idx & TxInputDGLD.OUTPOINT_ISSUANCE_FLAG)
         0000000000000000000000000000000000000000000000000000000000000000    nonce 32bytes
         0000000000000000000000000000000000000000000000000000000000000000    entropy 32bytes
         01  00038d7ea4c68000  amount (confidential value)
@@ -620,7 +620,7 @@ void transaction_parse(unsigned char parseMode) {
                         }
                         transaction_offset_increase(4);
 
-			//Additional "issuance" data to be read here if this is an Ocean
+			//Additional "issuance" data to be read here if this is an DGLD
                         //issuance transaction - TODO 
 			
                         // Move to next input
@@ -652,7 +652,7 @@ void transaction_parse(unsigned char parseMode) {
                 }
 
 /*
-    Ocean transaction sample - outputs
+    DGLD transaction sample - outputs
 
     02          # of vouts
 
@@ -778,7 +778,59 @@ void transaction_parse(unsigned char parseMode) {
 			   .transactionCurrentInputOutput ==
 			   btchip_context_D.transactionTargetInput)) {
                         // Save the amount
-                        os_memmove(btchip_context_D.transactionContext
+			os_memmove(btchip_context_D.transactionContext.transactionAmount,
+                                   btchip_context_D.transactionBufferPointer,
+                                   8);
+                        btchip_context_D.trustedInputProcessed = 1;
+			transaction_offset_increase(8);
+		      }
+		    } else {
+		      //DGLD asset, value and nonce: for each of these fields,
+		      //the first byte read determines the version number,
+		      //which dictates the number of bytes to read.
+		      
+		      //Temp variables
+		      unsigned char version=0;
+		      unsigned int varSizeBytes=1;
+		      
+		      //Confidential asset
+		      check_transaction_available(varSizeBytes);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			  (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
+			version = *btchip_context_D.transactionBufferPointer;
+			os_memmove(btchip_context_D.transactionContext
+				   .transactionAsset,
+				   btchip_context_D.transactionBufferPointer,
+				   varSizeBytes);
+		      }
+		      transaction_offset_increase(varSizeBytes);
+		      if(version == 1 || version == 0xff || version==10 || version==11){
+			varSizeBytes=32;
+			check_transaction_available(varSizeBytes);
+			if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			    (btchip_context_D.transactionContext
+			     .transactionCurrentInputOutput ==
+			     btchip_context_D.transactionTargetInput)) {
+			  // Save the asset ID
+			  os_memmove(btchip_context_D.transactionContext
+				     .transactionAsset,
+				     btchip_context_D.transactionBufferPointer,
+				     varSizeBytes);
+			}
+			transaction_offset_increase(varSizeBytes);
+		      } 
+		      
+		      //Confidential value
+		      varSizeBytes=1;
+		      check_transaction_available(varSizeBytes);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			  (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
+			version = *btchip_context_D.transactionBufferPointer;
+			os_memmove(btchip_context_D.transactionContext
 				   8);
                         btchip_context_D.trustedInputProcessed = 1;
 			transaction_offset_increase(8);
@@ -830,8 +882,8 @@ void transaction_parse(unsigned char parseMode) {
 			version = *btchip_context_D.transactionBufferPointer;
 			os_memmove(btchip_context_D.transactionContext
 				   .transactionAmount,
-                                   btchip_context_D.transactionBufferPointer,
-                                   varSizeBytes);
+				   btchip_context_D.transactionBufferPointer,
+				   varSizeBytes);
 		      }
 		      transaction_offset_increase(varSizeBytes);
 		      if(version == 1 || version == 0xff){
@@ -859,14 +911,14 @@ void transaction_parse(unsigned char parseMode) {
 		      varSizeBytes=1;
 		      check_transaction_available(varSizeBytes);
 		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
-                          (btchip_context_D.transactionContext
+			  (btchip_context_D.transactionContext
 			   .transactionCurrentInputOutput ==
 			   btchip_context_D.transactionTargetInput)) {
 			version = *btchip_context_D.transactionBufferPointer;
 			os_memmove(btchip_context_D.transactionContext
 				   .transactionOutputNonce,
-                                   btchip_context_D.transactionBufferPointer,
-                                   varSizeBytes);
+				   btchip_context_D.transactionBufferPointer,
+				   varSizeBytes);
 		      }
 		      transaction_offset_increase(varSizeBytes);
 		      if(version == 1 || version == 0xff || version==2 || version==3){
@@ -882,26 +934,26 @@ void transaction_parse(unsigned char parseMode) {
 			// Save the output nonce
 			os_memmove(btchip_context_D.transactionContext
 				   .transactionOutputNonce,
-                                   btchip_context_D.transactionBufferPointer,
-                                   varSizeBytes);                     
+				   btchip_context_D.transactionBufferPointer,
+				   varSizeBytes);                     
 			btchip_context_D.trustedInputProcessed = 1;
 			btchip_context_D.transactionBufferPointer,
 			  varSizeBytes);                     
-		      btchip_context_D.trustedInputProcessed = 1;
+			btchip_context_D.trustedInputProcessed = 1;
+		      }
+		      transaction_offset_increase(8);
 		    }
-		    transaction_offset_increase(8);
-		} 
-
+				 
 		 
-		  // Read the script length
-		  btchip_context_D.transactionContext.scriptRemaining =
-		    transaction_get_varint();
-		  
-		  PRINTF("Script to read " DEBUG_LONG "\n",btchip_context_D.transactionContext.scriptRemaining);
-		  // Move on
-		  btchip_context_D.transactionContext.transactionState =
-		    BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT;
-		  
+		    // Read the script length
+		    btchip_context_D.transactionContext.scriptRemaining =
+		      transaction_get_varint();
+		    
+		    PRINTF("Script to read " DEBUG_LONG "\n",btchip_context_D.transactionContext.scriptRemaining);
+		    // Move on
+		    btchip_context_D.transactionContext.transactionState =
+		      BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT;
+		    
 		  // no break is intentional
                 }
 	    case BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT: {
@@ -978,7 +1030,7 @@ void transaction_parse(unsigned char parseMode) {
                 }
 
 /*
-    Ocean transaction sample = extra data
+    DGLD transaction sample = extra data
 
     00000000 locktime
 
