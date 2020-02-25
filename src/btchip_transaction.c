@@ -237,6 +237,15 @@ void transaction_parse(unsigned char parseMode) {
                             }
                         }
                     }
+
+/*
+    Ocean Transaction sample - header
+    02000000    version
+    01          flag
+
+    01          # of vins
+ */
+		    
                     // Parse the beginning of the transaction
                     // Version
                     check_transaction_available(4);
@@ -263,6 +272,17 @@ void transaction_parse(unsigned char parseMode) {
                         }
                     }
 
+		    //If using OCEAN, the next byte to read in will be a 'flag'.
+                    if(G_coin_config->kind == COIN_KIND_OCEAN){
+                        //Flag
+                        const unsigned int varsizebytes=1;
+                        check_transaction_available(varsizebytes);
+                        os_memmove(btchip_context_D.transactionContext.transactionFlag,
+                                    btchip_context_D.transactionBufferPointer,
+                                    varsizebytes);
+                        transaction_offset_increase(varsizebytes);
+                    }
+
                     // Number of inputs
                     btchip_context_D.transactionContext
                         .transactionRemainingInputsOutputs =
@@ -275,6 +295,22 @@ void transaction_parse(unsigned char parseMode) {
                     // no break is intentional
                 }
 
+/*
+    Ocean transaction sample - inputs
+
+    0000000000000000000000000000000000000000000000000000000000000000    vin prevhash
+    ffffffff    vin prev_idx
+    03  530101  script
+    ffffffff    sequence
+        - issuance example (if prev_idx & TxInputOcean.OUTPOINT_ISSUANCE_FLAG)
+        0000000000000000000000000000000000000000000000000000000000000000    nonce 32bytes
+        0000000000000000000000000000000000000000000000000000000000000000    entropy 32bytes
+        01  00038d7ea4c68000  amount (confidential value)
+        00                    inflation (confidential value)
+
+
+*/
+		  
                 case BTCHIP_TRANSACTION_DEFINED_WAIT_INPUT: {
                     unsigned char trustedInputFlag = 1;
                     PRINTF("Process input\n");
@@ -583,6 +619,10 @@ void transaction_parse(unsigned char parseMode) {
                             }
                         }
                         transaction_offset_increase(4);
+
+			//Additional "issuance" data to be read here if this is an Ocean
+                        //issuance transaction - TODO 
+			
                         // Move to next input
                         btchip_context_D.transactionContext
                             .transactionRemainingInputsOutputs--;
@@ -610,6 +650,25 @@ void transaction_parse(unsigned char parseMode) {
                         dataAvailable;
                     break;
                 }
+
+/*
+    Ocean transaction sample - outputs
+
+    02          # of vouts
+
+    01  8f9390e4c7b981e355aed3c5690e17c2e13bb263246a55d8039813cac670c2f1    asset (confidential asset)
+    01  000000000000de80    value (confidential value)
+    00                      nonce (confidential nonce)
+    01  51                  script
+
+    01  8f9390e4c7b981e355aed3c5690e17c2e13bb263246a55d8039813cac670c2f1
+    01  0000000000000000
+    00
+    26  6a24aa21a9ed2127440070600b5e8482e5df5815cc15b8262acf7533136c501f3cb4801faaf6
+
+   */
+
+		  
                 case BTCHIP_TRANSACTION_INPUT_HASHING_DONE: {
                     PRINTF("Input hashing done\n");
                     if (parseMode == PARSE_MODE_SIGNATURE) {
@@ -684,7 +743,7 @@ void transaction_parse(unsigned char parseMode) {
                     if (btchip_context_D.transactionDataRemaining < 1) {
                         // No more data to read, ok
                         goto ok;
-                    }
+                    } 
                     // Number of outputs
                     btchip_context_D.transactionContext
                         .transactionRemainingInputsOutputs =
@@ -710,60 +769,170 @@ void transaction_parse(unsigned char parseMode) {
                         // No more data to read, ok
                         goto ok;
                     }
-                    // Amount
-                    check_transaction_available(8);
-                    if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
-                        (btchip_context_D.transactionContext
-                             .transactionCurrentInputOutput ==
-                         btchip_context_D.transactionTargetInput)) {
+
+		    if(!G_coin_config->kind == COIN_KIND_DGLD){
+		      // Amount
+		      check_transaction_available(8);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			  (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
                         // Save the amount
                         os_memmove(btchip_context_D.transactionContext
-                                       .transactionAmount,
-                                   btchip_context_D.transactionBufferPointer,
-                                   8);
+				   8);
                         btchip_context_D.trustedInputProcessed = 1;
-                    }
-                    transaction_offset_increase(8);
-                    // Read the script length
-                    btchip_context_D.transactionContext.scriptRemaining =
-                        transaction_get_varint();
+			transaction_offset_increase(8);
+		    } else {
+		      //Ocean asset, value and nonce: for each of these fields,
+		      //the first byte read determines the version number,
+		      //which dictates the number of bytes to read.
+		      
+		      //Temp variables
+		      unsigned char version=0;
+		      unsigned int varSizeBytes=1;
+		      
+		      //Confidential asset
+		      check_transaction_available(varSizeBytes);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+                          (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
+			version = *btchip_context_D.transactionBufferPointer;
+			os_memmove(btchip_context_D.transactionContext
+				   .transactionAsset,
+                                   btchip_context_D.transactionBufferPointer,
+                                   varSizeBytes);
+		      }
+		      transaction_offset_increase(varSizeBytes);
+		      if(version == 1 || version == 0xff || version==10 || version==11){
+			varSizeBytes=32;
+			check_transaction_available(varSizeBytes);
+			if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			    (btchip_context_D.transactionContext
+			     .transactionCurrentInputOutput ==
+			     btchip_context_D.transactionTargetInput)) {
+			  // Save the asset ID
+			  os_memmove(btchip_context_D.transactionContext
+				     .transactionAsset,
+				     btchip_context_D.transactionBufferPointer,
+				     varSizeBytes);
+			}
+			transaction_offset_increase(varSizeBytes);
+		      } 
+		      
+		      //Confidential value
+		      varSizeBytes=1;
+		      check_transaction_available(varSizeBytes);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+                          (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
+			version = *btchip_context_D.transactionBufferPointer;
+			os_memmove(btchip_context_D.transactionContext
+				   .transactionAmount,
+                                   btchip_context_D.transactionBufferPointer,
+                                   varSizeBytes);
+		      }
+		      transaction_offset_increase(varSizeBytes);
+		      if(version == 1 || version == 0xff){
+			varSizeBytes=8;
+		      } else if (version==8 || version==9){
+			varSizeBytes=32;
+		      } else {
+			varSizeBytes=0;
+		      } 
+		      if(varSizeBytes){
+			check_transaction_available(varSizeBytes);
+			if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			    (btchip_context_D.transactionContext
+			     .transactionCurrentInputOutput ==
+			     btchip_context_D.transactionTargetInput)) {
+			  os_memmove(btchip_context_D.transactionContext
+				     .transactionAmount,
+				     btchip_context_D.transactionBufferPointer,
+				     varSizeBytes);
+			}
+			transaction_offset_increase(varSizeBytes);
+		      }
 
-                    PRINTF("Script to read " DEBUG_LONG "\n",btchip_context_D.transactionContext.scriptRemaining);
-                    // Move on
-                    btchip_context_D.transactionContext.transactionState =
-                        BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT;
+		      //Confidential nonce
+		      varSizeBytes=1;
+		      check_transaction_available(varSizeBytes);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+                          (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
+			version = *btchip_context_D.transactionBufferPointer;
+			os_memmove(btchip_context_D.transactionContext
+				   .transactionOutputNonce,
+                                   btchip_context_D.transactionBufferPointer,
+                                   varSizeBytes);
+		      }
+		      transaction_offset_increase(varSizeBytes);
+		      if(version == 1 || version == 0xff || version==2 || version==3){
+			varSizeBytes=32;
+		      } else {
+			varSizeBytes=0;
+		      }
+		      check_transaction_available(varSizeBytes);
+		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
+			  (btchip_context_D.transactionContext
+			   .transactionCurrentInputOutput ==
+			   btchip_context_D.transactionTargetInput)) {
+			// Save the output nonce
+			os_memmove(btchip_context_D.transactionContext
+				   .transactionOutputNonce,
+                                   btchip_context_D.transactionBufferPointer,
+                                   varSizeBytes);                     
+			btchip_context_D.trustedInputProcessed = 1;
+			btchip_context_D.transactionBufferPointer,
+			  varSizeBytes);                     
+		      btchip_context_D.trustedInputProcessed = 1;
+		    }
+		    transaction_offset_increase(8);
+		} 
 
-                    // no break is intentional
+		 
+		  // Read the script length
+		  btchip_context_D.transactionContext.scriptRemaining =
+		    transaction_get_varint();
+		  
+		  PRINTF("Script to read " DEBUG_LONG "\n",btchip_context_D.transactionContext.scriptRemaining);
+		  // Move on
+		  btchip_context_D.transactionContext.transactionState =
+		    BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT;
+		  
+		  // no break is intentional
                 }
-                case BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT: {
-                    unsigned char dataAvailable;
-                    PRINTF("Process output script, remaining " DEBUG_LONG "\n",btchip_context_D.transactionContext.scriptRemaining);
-                    /*
-                    // Special check if consuming a P2SH script
-                    if (parseMode == PARSE_MODE_TRUSTED_INPUT) {
-                      // Assume the full input script is sent in a single APDU,
-                    then do the ghetto validation
-                      if ((btchip_context_D.transactionBufferPointer[0] ==
-                    OP_HASH160) &&
-                          (btchip_context_D.transactionBufferPointer[btchip_context_D.transactionDataRemaining
-                    - 1] == OP_EQUAL)) {
-                        PRINTF("Marking P2SH output\n");
-                        btchip_context_D.transactionContext.consumeP2SH = 1;
-                      }
-                    }
-                    */
-                    if (btchip_context_D.transactionDataRemaining < 1) {
-                        // No more data to read, ok
-                        goto ok;
-                    }
-                    if (btchip_context_D.transactionContext.scriptRemaining ==
-                        0) {
-                        // Move to next output
-                        btchip_context_D.transactionContext
-                            .transactionRemainingInputsOutputs--;
-                        btchip_context_D.transactionContext
-                            .transactionCurrentInputOutput++;
-                        btchip_context_D.transactionContext.transactionState =
+	    case BTCHIP_TRANSACTION_OUTPUT_HASHING_IN_PROGRESS_OUTPUT_SCRIPT: {
+	      unsigned char dataAvailable;
+	      PRINTF("Process output script, remaining " DEBUG_LONG "\n",btchip_context_D.transactionContext.scriptRemaining);
+	      /*
+	      // Special check if consuming a P2SH script
+	      if (parseMode == PARSE_MODE_TRUSTED_INPUT) {
+	      // Assume the full input script is sent in a single APDU,
+	      then do the ghetto validation
+	      if ((btchip_context_D.transactionBufferPointer[0] ==
+	      OP_HASH160) &&
+	      (btchip_context_D.transactionBufferPointer[btchip_context_D.transactionDataRemaining
+	      - 1] == OP_EQUAL)) {
+	      PRINTF("Marking P2SH output\n");
+	      btchip_context_D.transactionContext.consumeP2SH = 1;
+	      }
+	      }
+	      */
+	      if (btchip_context_D.transactionDataRemaining < 1) {
+		// No more data to read, ok
+		goto ok;
+	      }
+	      if (btchip_context_D.transactionContext.scriptRemaining ==
+		  0) {
+		// Move to next output
+		btchip_context_D.transactionContext
+		  .transactionRemainingInputsOutputs--;
+		btchip_context_D.transactionContext
+		  .transactionCurrentInputOutput++;
+		btchip_context_D.transactionContext.transactionState =
                             BTCHIP_TRANSACTION_DEFINED_WAIT_OUTPUT;
                         continue;
                     }
@@ -808,6 +977,25 @@ void transaction_parse(unsigned char parseMode) {
                     }
                 }
 
+/*
+    Ocean transaction sample = extra data
+
+    00000000 locktime
+
+    # for each vin - CTxInWitness
+    00  issuance amount range proof
+    00  inflation range proof
+    01  num of script witnesses
+    20 0000000000000000000000000000000000000000000000000000000000000000 script witness
+    00  num of pegin witnesses
+
+    # for each vout - CTxOutWitness
+    00  surjection proof
+    00  range proof
+    00  surjection proof
+    00  range proof
+    */
+		  
                 case BTCHIP_TRANSACTION_PROCESS_EXTRA: {
                     unsigned char dataAvailable;
 
