@@ -788,57 +788,7 @@ void transaction_parse(unsigned char parseMode) {
 		      //DGLD asset, value and nonce: for each of these fields,
 		      //the first byte read determines the version number,
 		      //which dictates the number of bytes to read.
-		      
-		      //Temp variables
-		      unsigned char version=0;
-		      unsigned int varSizeBytes=1;
-		      
-		      //Confidential asset
-		      check_transaction_available(varSizeBytes);
-		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
-			  (btchip_context_D.transactionContext
-			   .transactionCurrentInputOutput ==
-			   btchip_context_D.transactionTargetInput)) {
-			version = *btchip_context_D.transactionBufferPointer;
-			os_memmove(btchip_context_D.transactionContext
-				   .transactionAsset,
-				   btchip_context_D.transactionBufferPointer,
-				   varSizeBytes);
-		      }
-		      transaction_offset_increase(varSizeBytes);
-		      if(version == 1 || version == 0xff || version==10 || version==11){
-			varSizeBytes=32;
-			check_transaction_available(varSizeBytes);
-			if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
-			    (btchip_context_D.transactionContext
-			     .transactionCurrentInputOutput ==
-			     btchip_context_D.transactionTargetInput)) {
-			  // Save the asset ID
-			  os_memmove(btchip_context_D.transactionContext
-				     .transactionAsset,
-				     btchip_context_D.transactionBufferPointer,
-				     varSizeBytes);
-			}
-			transaction_offset_increase(varSizeBytes);
-		      } 
-		      
-		      //Confidential value
-		      varSizeBytes=1;
-		      check_transaction_available(varSizeBytes);
-		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
-			  (btchip_context_D.transactionContext
-			   .transactionCurrentInputOutput ==
-			   btchip_context_D.transactionTargetInput)) {
-			version = *btchip_context_D.transactionBufferPointer;
-			os_memmove(btchip_context_D.transactionContext
-				   8);
-                        btchip_context_D.trustedInputProcessed = 1;
-			transaction_offset_increase(8);
-		    } else {
-		      //Ocean asset, value and nonce: for each of these fields,
-		      //the first byte read determines the version number,
-		      //which dictates the number of bytes to read.
-		      
+		      		      
 		      //Temp variables
 		      unsigned char version=0;
 		      unsigned int varSizeBytes=1;
@@ -936,9 +886,6 @@ void transaction_parse(unsigned char parseMode) {
 				   .transactionOutputNonce,
 				   btchip_context_D.transactionBufferPointer,
 				   varSizeBytes);                     
-			btchip_context_D.trustedInputProcessed = 1;
-			btchip_context_D.transactionBufferPointer,
-			  varSizeBytes);                     
 			btchip_context_D.trustedInputProcessed = 1;
 		      }
 		      transaction_offset_increase(8);
