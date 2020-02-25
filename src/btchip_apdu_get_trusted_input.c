@@ -24,6 +24,7 @@
 #define TRUSTEDINPUT_SIZE 48
 
 unsigned short btchip_apdu_get_trusted_input() {
+    return BTCHIP_SW_OK;
     unsigned char apduLength;
     unsigned char dataOffset = 0;
     unsigned char trustedInputSignature[32];

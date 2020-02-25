@@ -45,7 +45,7 @@ APP_LOAD_PARAMS += --path $(APP_PATH)
 else ifeq ($(COIN),bitcoin)
 # Bitcoin mainnet
 DEFINES   += COIN_P2PKH_VERSION=0 COIN_P2SH_VERSION=5 COIN_FAMILY=1 COIN_COINID=\"Bitcoin\" COIN_COINID_HEADER=\"BITCOIN\" COIN_COLOR_HDR=0xFCB653 COIN_COLOR_DB=0xFEDBA9 COIN_COINID_NAME=\"Bitcoin\" COIN_COINID_SHORT=\"BTC\" COIN_NATIVE_SEGWIT_PREFIX=\"bc\" COIN_KIND=COIN_KIND_BITCOIN COIN_FLAGS=FLAG_SEGWIT_CHANGE_SUPPORT
-DEFINES_LIB=# we're not using the lib :)
+DEFINES_LIB=# were not using the lib :)
 APPNAME ="Bitcoin"
 APP_LOAD_PARAMS += --path $(APP_PATH)
 #LIB and global pin and
@@ -59,6 +59,11 @@ else ifeq ($(COIN),bitcoin_gold)
 # Bitcoin Gold
 DEFINES   += COIN_P2PKH_VERSION=38 COIN_P2SH_VERSION=23 COIN_FAMILY=1 COIN_COINID=\"Bitcoin\\x20Gold\" COIN_COINID_HEADER=\"BITCOINGOLD\" COIN_COLOR_HDR=0x85bb65 COIN_COLOR_DB=0xc2ddb2 COIN_COINID_NAME=\"BitcoinGold\" COIN_COINID_SHORT=\"BTG\" COIN_KIND=COIN_KIND_BITCOIN_GOLD COIN_FLAGS=FLAG_SEGWIT_CHANGE_SUPPORT COIN_FORKID=79
 APPNAME ="Bitcoin Gold"
+APP_LOAD_PARAMS += --path $(APP_PATH)
+else ifeq ($(COIN),dgld)
+# DGLD
+DEFINES   += COIN_P2PKH_VERSION=38 COIN_P2SH_VERSION=97 COIN_FAMILY=1 COIN_COINID=\"DGLD\" COIN_COINID_HEADER=\"DGLD\" COIN_COLOR_HDR=0xFCB653 COIN_COLOR_DB=0xFEDBA9 COIN_COINID_NAME=\"DGLD\" COIN_COINID_SHORT=\"DGLD\" COIN_NATIVE_SEGWIT_PREFIX=\"dgld1\" COIN_KIND=COIN_KIND_DGLD COIN_FLAGS=FLAG_SEGWIT_CHANGE_SUPPORT
+APPNAME ="DGLD"
 APP_LOAD_PARAMS += --path $(APP_PATH)
 else ifeq ($(COIN),litecoin)
 # Litecoin
@@ -172,7 +177,7 @@ APPNAME ="Resistance"
 APP_LOAD_PARAMS += --path $(APP_PATH)
 else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported COIN - use bitcoin_testnet, bitcoin, bitcoin_cash, bitcoin_gold, litecoin, dogecoin, dash, zcash, horizen, komodo, stratis, peercoin, pivx, viacoin, vertcoin, stealth, digibyte, qtum, bitcoin_private, zcoin, gamecredits, zclassic, xsn, nix, lbry, resistance)
+$(error Unsupported COIN - use bitcoin_testnet, bitcoin, bitcoin_cash, bitcoin_gold, dgld, litecoin, dogecoin, dash, zcash, horizen, komodo, stratis, peercoin, pivx, viacoin, vertcoin, stealth, digibyte, qtum, bitcoin_private, zcoin, gamecredits, zclassic, xsn, nix, lbry, resistance)
 endif
 endif
 
@@ -299,10 +304,16 @@ ifeq ($(TARGET_NAME),TARGET_NANOS)
 endif
 
 load: all
-	python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
+	python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
+
+loadcmd:
+	@echo python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
 
 delete:
-	python -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
+	python3 -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
+
+deletecmd:
+	@echo python3 -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)
 
 # import generic rules from the sdk
 include $(BOLOS_SDK)/Makefile.rules
