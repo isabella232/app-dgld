@@ -241,15 +241,14 @@ endif
 DEBUG = 1
 ifneq ($(DEBUG),0)
 
-        ifeq ($(TARGET_NAME),TARGET_NANOX)
+         ifeq ($(TARGET_NAME),TARGET_NANOX)
                 DEFINES   += HAVE_PRINTF PRINTF=mcu_usb_printf
-        else
-                DEFINES   += HAVE_PRINTF PRINTF=screen_printf
-        endif
+         else
+              DEFINES   += HAVE_PRINTF PRINTF=screen_printf
+         endif
 else
         DEFINES   += PRINTF\(...\)=
 endif
-
 
 
 ##############
@@ -308,9 +307,6 @@ load: all
 
 loadcmd:
 	@echo python3 -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
-
-loadcmd:
-	@echo python -m ledgerblue.loadApp $(APP_LOAD_PARAMS)
 
 delete:
 	python3 -m ledgerblue.deleteApp $(COMMON_DELETE_PARAMS)

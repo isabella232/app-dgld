@@ -97,7 +97,7 @@ unsigned short btchip_apdu_get_wallet_public_key() {
         return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
     }
 
-    PRINTF("pin ok\n");
+    //    PRINTF("pin ok\n");
 
     btchip_private_derive_keypair(keyPath, 1, chainCode);
 
@@ -155,7 +155,7 @@ unsigned short btchip_apdu_get_wallet_public_key() {
         }
     }
     G_io_apdu_buffer[66] = keyLength;
-    PRINTF("Length %d\n", keyLength);
+    //    PRINTF("Length %d\n", keyLength);
     if (!uncompressedPublicKeys) {
         // Restore for the full key component
         G_io_apdu_buffer[1] = 0x04;
