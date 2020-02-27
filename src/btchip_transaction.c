@@ -103,9 +103,11 @@ unsigned long int transaction_get_varint(void) {
     check_transaction_available(1);
     firstByte = *btchip_context_D.transactionBufferPointer;
     if (firstByte < 0xFD) {
+        PRINTF("transaction_get_varint - 1 byte\n");
         transaction_offset_increase(1);
         return firstByte;
     } else if (firstByte == 0xFD) {
+        PRINTF("transaction_get_varint - 2 bytes\n");
         unsigned long int result;
         transaction_offset_increase(1);
         check_transaction_available(2);
@@ -117,6 +119,7 @@ unsigned long int transaction_get_varint(void) {
         transaction_offset_increase(2);
         return result;
     } else if (firstByte == 0xFE) {
+        PRINTF("transaction_get_varint - 4 bytes\n");
         unsigned long int result;
         transaction_offset_increase(1);
         check_transaction_available(4);
@@ -125,7 +128,7 @@ unsigned long int transaction_get_varint(void) {
         transaction_offset_increase(4);
         return result;
     } else {
-        //PRINTF("Varint parsing failed\n");
+        PRINTF("Varint parsing failed\n");
         THROW(INVALID_PARAMETER);
         return 0;
     }
@@ -285,10 +288,9 @@ void transaction_parse(unsigned char parseMode) {
                         //Flag
 		      PRINTF("Checking transaction available...\n");
                         check_transaction_available(1);
-			PRINTF("Moving flag data...\n");
-			os_memmove(btchip_context_D.transactionContext.transactionFlag,
-			          btchip_context_D.transactionBufferPointer,
-				   1);
+			PRINTF("Copying flag data...\n");
+			btchip_context_D.transactionContext.transactionFlag =
+			  *btchip_context_D.transactionBufferPointer;
 			PRINTF("Increasing transaction offset...\n");
                         transaction_offset_increase(1);
                     }
