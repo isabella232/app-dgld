@@ -134,6 +134,7 @@ struct btchip_transaction_context_s {
     unsigned char relaxed;
     /** If the transaction consumes a P2SH input */
     unsigned char consumeP2SH;
+
     /** For DGLD transactions: */
     /** A flag */
     unsigned char transactionFlag;
