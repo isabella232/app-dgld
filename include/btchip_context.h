@@ -141,7 +141,7 @@ struct btchip_transaction_context_s {
     /** The asset type */
     unsigned char transactionAsset[33];
     /** Transaction output nonce */
-    unsigned char transactionOutputNonce[33];    
+    unsigned char transactionOutputNonce;    
 };
 typedef struct btchip_transaction_context_s btchip_transaction_context_t;
 

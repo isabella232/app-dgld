@@ -24,7 +24,7 @@
 #define TRUSTEDINPUT_SIZE 48
 
 unsigned short btchip_apdu_get_trusted_input() {
-    return BTCHIP_SW_OK;
+    //PRINTF("Get trusted input...\n");
     unsigned char apduLength;
     unsigned char dataOffset = 0;
     unsigned char trustedInputSignature[32];
@@ -38,11 +38,13 @@ unsigned short btchip_apdu_get_trusted_input() {
     case BTCHIP_MODE_SERVER:
         break;
     default:
+      //PRINTF("Conditions of use not satisfied\n");
         return BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
     }
 
     if (G_io_apdu_buffer[ISO_OFFSET_P1] == GET_TRUSTED_INPUT_P1_FIRST) {
         // Initialize
+        //PRINTF("Initialize...\n");
         btchip_context_D.transactionTargetInput =
             btchip_read_u32(G_io_apdu_buffer + ISO_OFFSET_CDATA, 1, 0);
         btchip_context_D.transactionContext.transactionState =
@@ -64,10 +66,13 @@ unsigned short btchip_apdu_get_trusted_input() {
         G_io_apdu_buffer + ISO_OFFSET_CDATA + dataOffset;
     btchip_context_D.transactionDataRemaining = apduLength - dataOffset;
 
+    //PRINTF("Parse trusted input...\n");
     transaction_parse(PARSE_MODE_TRUSTED_INPUT);
-
+    //PRINTF("Finished parsing.\n");
+	
     if (btchip_context_D.transactionContext.transactionState ==
         BTCHIP_TRANSACTION_PARSED) {
+        //PRINTF("Transaction parsed...\n");
         unsigned char targetHash[32];
 
         btchip_context_D.transactionContext.transactionState =
@@ -75,6 +80,7 @@ unsigned short btchip_apdu_get_trusted_input() {
         btchip_set_check_internal_structure_integrity(1);
         if (!btchip_context_D.trustedInputProcessed) {
             // Output was not found
+	    PRINTF("Output was not found.\n");
             return BTCHIP_SW_INCORRECT_DATA;
         }
 
@@ -101,5 +107,6 @@ unsigned short btchip_apdu_get_trusted_input() {
 
         btchip_context_D.outLength = 0x38;
     }
+    //PRINTF("Finished get trusted input..\n");
     return BTCHIP_SW_OK;
 }
