@@ -359,21 +359,21 @@ void transaction_parse(unsigned char parseMode) {
                         switch (*btchip_context_D.transactionBufferPointer) {
                         case 0:
                             if (btchip_context_D.usingSegwit) {
-			        PRINTF("Non trusted input used in segwit mode");
+			        //PRINTF("Non trusted input used in segwit mode");
                                 goto fail;
                             }
                             trustedInputFlag = 0;
                             break;
                         case 1:
                             if (btchip_context_D.usingSegwit) {
-                                PRINTF("Trusted input used in segwit mode");
+                                //PRINTF("Trusted input used in segwit mode");
                                 goto fail;
                             }
                             trustedInputFlag = 1;
                             break;
                         case 2:
                             if (!btchip_context_D.usingSegwit) {
-                                PRINTF("Segwit input not used in segwit mode");
+                                //PRINTF("Segwit input not used in segwit mode");
                                 goto fail;
                             }
                             break;
@@ -385,7 +385,7 @@ void transaction_parse(unsigned char parseMode) {
                         trustedInputLength =
                         *(btchip_context_D.transactionBufferPointer + 1);
                         if (trustedInputLength > sizeof(trustedInput)) {
-                          //PRINTF("Trusted input too long\n");
+                          PRINTF("Trusted input too long\n");
                           goto fail;
                         }
                         */
@@ -979,7 +979,7 @@ void transaction_parse(unsigned char parseMode) {
     */
 		  
                 case BTCHIP_TRANSACTION_PROCESS_EXTRA: {
-		  PRINTF("Process extra\n");
+		  //PRINTF("Process extra\n");
                     unsigned char dataAvailable;
 
                     if (btchip_context_D.transactionContext.scriptRemaining ==

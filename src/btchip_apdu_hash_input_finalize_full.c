@@ -48,34 +48,54 @@ static bool check_output_displayable() {
         nullAmount = 1;
     unsigned char isOpCreate, isOpCall;
 
-    for (j = 0; j < 8; j++) {
+    unsigned char valueStart, valueSize, scriptStart;
+
+    if(G_coin_config->kind == COIN_KIND_DGLD){
+      valueStart=35;
+      valueSize=8;
+      scriptStart=valueStart+valueSize+1;
+    } else {
+      valueStart=0;
+      valueSize=8;
+      scriptStart=valueSize+valueStart;
+    }
+
+      
+    for (j = valueStart; j < valueSize; j++) {
         if (btchip_context_D.currentOutput[j] != 0) {
             nullAmount = 0;
             break;
         }
     }
     if (!nullAmount) {
-        btchip_swap_bytes(amount, btchip_context_D.currentOutput, 8);
+        btchip_swap_bytes(amount, btchip_context_D.currentOutput + valueStart, valueSize);
         transaction_amount_add_be(btchip_context_D.totalOutputAmount,
                                   btchip_context_D.totalOutputAmount, amount);
     }
     isOpReturn =
-        btchip_output_script_is_op_return(btchip_context_D.currentOutput + 8);
-    isP2sh = btchip_output_script_is_p2sh(btchip_context_D.currentOutput + 8);
+        btchip_output_script_is_op_return(btchip_context_D.currentOutput + scriptStart);
+    isP2sh = btchip_output_script_is_p2sh(btchip_context_D.currentOutput + scriptStart);
     isNativeSegwit = btchip_output_script_is_native_witness(
-        btchip_context_D.currentOutput + 8);
+        btchip_context_D.currentOutput + scriptStart);
     isOpCreate =
-        btchip_output_script_is_op_create(btchip_context_D.currentOutput + 8);
+        btchip_output_script_is_op_create(btchip_context_D.currentOutput + scriptStart);
     isOpCall =
-        btchip_output_script_is_op_call(btchip_context_D.currentOutput + 8);
+        btchip_output_script_is_op_call(btchip_context_D.currentOutput + scriptStart);
     if (((G_coin_config->kind == COIN_KIND_QTUM) &&
-         !btchip_output_script_is_regular(btchip_context_D.currentOutput + 8) &&
+         !btchip_output_script_is_regular(btchip_context_D.currentOutput + scriptStart) &&
          !isP2sh && !(nullAmount && isOpReturn) && !isOpCreate && !isOpCall) ||
         (!(G_coin_config->kind == COIN_KIND_QTUM) &&
-         !btchip_output_script_is_regular(btchip_context_D.currentOutput + 8) &&
+         !btchip_output_script_is_regular(btchip_context_D.currentOutput + scriptStart) &&
          !isP2sh && !(nullAmount && isOpReturn))) {
-        PRINTF("Error : Unrecognized input script");
-        THROW(EXCEPTION);
+      PRINTF("Error : Unrecognized input script (check output displayable): \n%.*H\n",
+	     sizeof(btchip_context_D.currentOutput),btchip_context_D.currentOutput);
+	     
+      //\nisNativeSegwit: \n%.*H\nisOpCreate:\n%.*H\nisOpCall: \n%.*H\nnullAmount: \n%.*H\namount: \n%.*H\n",
+
+      //sizeof(isNativeSegwit),isNativeSegwit,
+      //     sizeof(isOpCreate),isOpCreate,sizeof(isOpCall),isOpCall,
+      //     sizeof(nullAmount),nullAmount,sizeof(amount),amount);
+      THROW(EXCEPTION);
     }
     if (btchip_context_D.tmpCtx.output.changeInitialized && !isOpReturn) {
         bool changeFound = false;

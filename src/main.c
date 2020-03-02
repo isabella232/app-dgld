@@ -2238,14 +2238,14 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
             (!(G_coin_config->kind == COIN_KIND_QTUM) ||
              (!isOpCreate && !isOpCall))) {
             if (!checkOnly) {
-                PRINTF("Error : Unrecognized input script");
+                PRINTF("Error : Unrecognized input script (prepare full output 1)\n");
             }
             goto error;
         } else if (!btchip_output_script_is_regular(
                        btchip_context_D.currentOutput + offset) &&
                    !isP2sh && !(nullAmount && isOpReturn)) {
             if (!checkOnly) {
-                PRINTF("Error : Unrecognized input script");
+                PRINTF("Error : Unrecognized input script (prepare full output 2)\n");
             }
             goto error;
         }
