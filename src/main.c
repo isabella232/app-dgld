@@ -2056,10 +2056,21 @@ uint8_t prepare_single_output() {
     unsigned short version = 0; // for static analyzer only
     unsigned short textSize;
     unsigned char nativeSegwit;
+    unsigned char asset[33];
 
     vars.tmp.fullAddress[0] = '\0';
+      
+    if(G_coin_config->kind == COIN_KIND_DGLD){
+      btchip_swap_bytes(asset, btchip_context_D.currentOutput + offset, 33);
+      offset+=34;
+    }
+    
     btchip_swap_bytes(amount, btchip_context_D.currentOutput + offset, 8);
-    offset += 8;
+    if(G_coin_config->kind == COIN_KIND_DGLD){
+      offset += 9;
+    } else {
+      offset += 8;
+    }
     nativeSegwit = btchip_output_script_is_native_witness(
         btchip_context_D.currentOutput + offset);
     if (btchip_output_script_is_op_return(btchip_context_D.currentOutput +
