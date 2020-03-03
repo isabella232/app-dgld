@@ -2063,9 +2063,12 @@ uint8_t prepare_single_output() {
     if(G_coin_config->kind == COIN_KIND_DGLD){
       btchip_swap_bytes(asset, btchip_context_D.currentOutput + offset, 33);
       offset+=34;
+      os_memmove(amount, btchip_context_D.currentOutput + offset, 8);
+    } else {
+      btchip_swap_bytes(amount, btchip_context_D.currentOutput + offset, 8);
     }
     
-    btchip_swap_bytes(amount, btchip_context_D.currentOutput + offset, 8);
+
     if(G_coin_config->kind == COIN_KIND_DGLD){
       offset += 9;
     } else {
@@ -2166,6 +2169,8 @@ uint8_t prepare_single_output() {
             (unsigned char *)(vars.tmp.fullAmount +
                           btchip_context_D.shortCoinIdLength + 1);
         textSize = btchip_convert_hex_amount_to_displayable(amount);
+	PRINTF("Amount string: \n%.*H\n",
+	       sizeof(amount),amount);
         vars.tmp.fullAmount[textSize + btchip_context_D.shortCoinIdLength + 1] =
             '\0';
     }

@@ -851,7 +851,7 @@ void transaction_parse(unsigned char parseMode) {
 			  (btchip_context_D.transactionContext
 			   .transactionCurrentInputOutput ==
 			   btchip_context_D.transactionTargetInput)) {
-			os_memmove(btchip_context_D.transactionContext
+			btchip_swap_bytes(btchip_context_D.transactionContext
 				   .transactionAmount,
 				   btchip_context_D.transactionBufferPointer,
 				   varSizeBytes);
