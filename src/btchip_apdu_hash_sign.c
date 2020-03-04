@@ -80,12 +80,13 @@ unsigned short btchip_apdu_hash_sign() {
                 return BTCHIP_SW_OK;
             }
 
-            if (btchip_context_D.transactionContext.transactionState !=
-                BTCHIP_TRANSACTION_SIGN_READY) {
-                PRINTF("Invalid transaction state %d\n", btchip_context_D.transactionContext.transactionState);
-                sw = BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
-                goto discardTransaction;
-            }
+	    // TODO - reenable
+	    //            if (btchip_context_D.transactionContext.transactionState !=
+	    //                BTCHIP_TRANSACTION_SIGN_READY) {
+	    //                PRINTF("Invalid transaction state %d\n", btchip_context_D.transactionContext.transactionState);
+	    //                sw = BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
+	    //                goto discardTransaction;
+	    //            }
 
             if (btchip_context_D.usingOverwinter && !btchip_context_D.overwinterSignReady) {
                 PRINTF("Overwinter not ready to sign\n");
