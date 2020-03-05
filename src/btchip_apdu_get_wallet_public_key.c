@@ -98,7 +98,7 @@ unsigned short btchip_apdu_get_wallet_public_key() {
     }
 
     //    PRINTF("pin ok\n");
-
+    PRINTF("Get wallet public key - keyPath\n%.*H\n", sizeof(keyPath), keyPath);
     btchip_private_derive_keypair(keyPath, 1, chainCode);
 
 

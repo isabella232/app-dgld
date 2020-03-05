@@ -2022,7 +2022,7 @@ uint8_t prepare_fees() {
         }
         else {
             if (borrow) {
-                PRINTF("Error : Fees not consistent");
+                //PRINTF("Error : Fees not consistent");
                 goto error;
             }
             os_memmove(vars.tmp.feesAmount, btchip_context_D.shortCoinId,
@@ -2169,8 +2169,8 @@ uint8_t prepare_single_output() {
             (unsigned char *)(vars.tmp.fullAmount +
                           btchip_context_D.shortCoinIdLength + 1);
         textSize = btchip_convert_hex_amount_to_displayable(amount);
-	PRINTF("Amount string: \n%.*H\n",
-	       sizeof(amount),amount);
+	//PRINTF("Amount string: \n%.*H\n",
+	//       sizeof(amount),amount);
         vars.tmp.fullAmount[textSize + btchip_context_D.shortCoinIdLength + 1] =
             '\0';
     }
@@ -2190,7 +2190,7 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
     if (btchip_context_D.transactionContext.relaxed &&
         !btchip_context_D.transactionContext.consumeP2SH) {
         if (!checkOnly) {
-            PRINTF("Error : Mixed inputs");
+            //PRINTF("Error : Mixed inputs");
         }
         goto error;
     }
@@ -2208,7 +2208,7 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
     numberOutputs = btchip_context_D.currentOutput[offset++];
     if (numberOutputs > 3) {
         if (!checkOnly) {
-            PRINTF("Error : Too many outputs");
+            //PRINTF("Error : Too many outputs");
         }
         goto error;
     }
@@ -2240,7 +2240,7 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
         // Always notify OP_RETURN to the user
         if (nullAmount && isOpReturn) {
             if (!checkOnly) {
-                PRINTF("Error : Unexpected OP_RETURN");
+                //PRINTF("Error : Unexpected OP_RETURN");
             }
             goto error;
         }
@@ -2254,14 +2254,14 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
             (!(G_coin_config->kind == COIN_KIND_QTUM) ||
              (!isOpCreate && !isOpCall))) {
             if (!checkOnly) {
-                PRINTF("Error : Unrecognized input script (prepare full output 1)\n");
+                //PRINTF("Error : Unrecognized input script (prepare full output 1)\n");
             }
             goto error;
         } else if (!btchip_output_script_is_regular(
                        btchip_context_D.currentOutput + offset) &&
                    !isP2sh && !(nullAmount && isOpReturn)) {
             if (!checkOnly) {
-                PRINTF("Error : Unrecognized input script (prepare full output 2)\n");
+                //PRINTF("Error : Unrecognized input script (prepare full output 2)\n");
             }
             goto error;
         }
@@ -2280,7 +2280,7 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
                           20) == 0) {
                 if (changeFound) {
                     if (!checkOnly) {
-                        PRINTF("Error : Multiple change output found");
+                        //PRINTF("Error : Multiple change output found");
                     }
                     goto error;
                 }
@@ -2294,13 +2294,13 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
     }
     if (btchip_context_D.tmpCtx.output.changeInitialized && !changeFound) {
         if (!checkOnly) {
-            PRINTF("Error : change output not found");
+            //PRINTF("Error : change output not found");
         }
         goto error;
     }
     if ((numberOutputs > 1) && (!changeFound || !specialOpFound)) {
         if (!checkOnly) {
-            PRINTF("Error : too many inputs");
+            //PRINTF("Error : too many inputs");
         }
         goto error;
     }
@@ -2309,7 +2309,7 @@ uint8_t prepare_full_output(uint8_t checkOnly) {
             totalOutputAmount);
     if (borrow && G_coin_config->kind != COIN_KIND_KOMODO) {
         if (!checkOnly) {
-            PRINTF("Error : Fees not consistent");
+            //PRINTF("Error : Fees not consistent");
         }
         goto error;
     }

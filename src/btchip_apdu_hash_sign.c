@@ -136,15 +136,20 @@ unsigned short btchip_apdu_hash_sign() {
                        &btchip_context_D.transactionSummary,
                        sizeof(transactionSummary));
 
-	    //PRINTF("Hash sign: fetch the private key - keyPath\n%.*H\n", sizeof(keyPath), keyPath);
+	    
             // Fetch the private key
 
+	    if (!os_global_pin_is_validated()) {
+	      return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
+	    }
+
+	    PRINTF("Hash sign: fetch the private key - keyPath\n%.*H\n", sizeof(keyPath), keyPath);
             btchip_private_derive_keypair(keyPath, 0, NULL);
 
             // TODO optional : check the public key against the associated non
             // blank input to sign
 
-	    //PRINTF("Hash sign: finalize the hash\n");
+	    PRINTF("Hash sign: finalize the hash\n");
             // Finalize the hash
 
             if (btchip_context_D.usingOverwinter) {
@@ -153,19 +158,35 @@ unsigned short btchip_apdu_hash_sign() {
             else {
                 btchip_write_u32_le(dataBuffer, lockTime);
                 btchip_write_u32_le(dataBuffer + 4, sighashType);
-                //PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
+                PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
 
+		if (!os_global_pin_is_validated()) {
+		  return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
+		}
+		
                 cx_hash(&btchip_context_D.transactionHashFull.sha256.header, CX_LAST,
                     dataBuffer, sizeof(dataBuffer), hash1, 32);
-                //PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
+                PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
 
+		if (!os_global_pin_is_validated()) {
+		  return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
+		}
+		
                 // Rehash
                 cx_sha256_init(&localHash);
+
+		if (!os_global_pin_is_validated()) {
+		  return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
+		}
+		
                 cx_hash(&localHash.header, CX_LAST, hash1, sizeof(hash1), hash2, 32);
             }
-            //PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
+            PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
 
-	    //PRINTF("Hash sign: sign\n");
+	    PRINTF("Hash sign: sign\n");
+	    if (!os_global_pin_is_validated()) {
+	      return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
+	    }
             // Sign
             btchip_signverify_finalhash(
                 &btchip_private_key_D, 1, hash2, sizeof(hash2),
@@ -176,6 +197,8 @@ unsigned short btchip_apdu_hash_sign() {
             btchip_context_D.outLength = G_io_apdu_buffer[1] + 2;
             G_io_apdu_buffer[btchip_context_D.outLength++] = sighashType;
 
+	    PRINTF("Hash sign: finished`\n");
+	    
             sw = BTCHIP_SW_OK;
 
             // Then discard the transaction and reply

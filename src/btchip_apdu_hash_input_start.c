@@ -28,10 +28,10 @@
 #define P2_CONTINUE 0x80
 
 unsigned short btchip_apdu_hash_input_start() {
-    PRINTF("Hash input start\n");
+    //PRINTF("Hash input start\n");
     unsigned char apduLength;
     apduLength = G_io_apdu_buffer[ISO_OFFSET_LC];
-    PRINTF("Checking op mode\n");
+    //PRINTF("Checking op mode\n");
     SB_CHECK(N_btchip.bkp.config.operationMode);
     switch (SB_GET(N_btchip.bkp.config.operationMode)) {
     case BTCHIP_MODE_WALLET:
@@ -44,7 +44,7 @@ unsigned short btchip_apdu_hash_input_start() {
 
     if (G_io_apdu_buffer[ISO_OFFSET_P1] == P1_FIRST) {
         // Initialize
-        PRINTF("Initialize\n");
+        //PRINTF("Initialize\n");
         btchip_context_D.transactionContext.transactionState =
             BTCHIP_TRANSACTION_NONE;
         btchip_set_check_internal_structure_integrity(1);
@@ -74,7 +74,7 @@ unsigned short btchip_apdu_hash_input_start() {
             // Thus allowing for numerous output to be processed in the
             // background without
             // requiring to disable autolock/autopoweroff
-	    PRINTF("Checking PIN status\n");
+	    //PRINTF("Checking PIN status\n");
             if (!btchip_context_D.transactionContext.firstSigned &&
                 !os_global_pin_is_validated()) {
                 return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
@@ -101,7 +101,7 @@ unsigned short btchip_apdu_hash_input_start() {
             btchip_context_D.segwitParsedOnce = 0;
             btchip_set_check_internal_structure_integrity(1);
             // Initialize for screen pairing
-	    PRINTF("Initialize for screen pairing\n");
+	    //PRINTF("Initialize for screen pairing\n");
             os_memset(&btchip_context_D.tmpCtx.output, 0,
                       sizeof(btchip_context_D.tmpCtx.output));
             btchip_context_D.tmpCtx.output.changeAccepted = 1;
