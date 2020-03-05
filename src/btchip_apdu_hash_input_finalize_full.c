@@ -70,27 +70,40 @@ static bool check_output_displayable() {
             break;
         }
     }
-
-    if (!nullAmount) {
-      btchip_swap_bytes(amount, btchip_context_D.currentOutput + valueStart, valueSize);
-        transaction_amount_add_be(btchip_context_D.totalOutputAmount,
-                                  btchip_context_D.totalOutputAmount, amount);
-    }
-
+    
     unsigned char* buffer = btchip_context_D.currentOutput + scriptStart;
 
     if(G_coin_config->kind == COIN_KIND_DGLD){
       PRINTF("Getting isNullScript");
       isNullScript = btchip_output_script_is_null(buffer);
       PRINTF("Got isNullScript"); 
-      if(isNullScript && nullAmount){
-	PRINTF("Error : Unrecognized output script (check output displayable): \n%.*H\n",
-	       sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
-	THROW(EXCEPTION);
+      if(isNullScript){
+	if(nullAmount){
+	  PRINTF("Error : Unrecognized output script (check output displayable): \n%.*H\n",
+		 sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
+	  THROW(EXCEPTION);
+	} else {
+	  return false;
+	}
       }
     } else {
       isNullScript = false;
     }
+
+    //Don't add the amount to the total output if this is a DGLD fees script 
+    if (!nullAmount && !isNullScript) {
+      if(G_coin_config->kind == COIN_KIND_DGLD){
+	os_memmove(amount, btchip_context_D.currentOutput + valueStart, valueSize);
+      } else {
+	btchip_swap_bytes(amount, btchip_context_D.currentOutput + valueStart, valueSize);
+      }
+      transaction_amount_add_be(btchip_context_D.totalOutputAmount,
+				btchip_context_D.totalOutputAmount, amount);
+    }
+
+    PRINTF("Total output amount: : \n%.*H\n",sizeof(btchip_context_D.totalOutputAmount), btchip_context_D.totalOutputAmount);
+    PRINTF("Transaction amount: : \n%.*H\n",sizeof(btchip_context_D.transactionContext.transactionAmount), btchip_context_D.transactionContext.transactionAmount);
+
 
     if(!isNullScript){
       isOpReturn =
