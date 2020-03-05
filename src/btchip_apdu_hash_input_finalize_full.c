@@ -44,12 +44,13 @@ static void btchip_apdu_hash_input_finalize_full_reset(void) {
 
 static bool check_output_displayable() {
     bool displayable = true;
-    unsigned char amount[8], isOpReturn, isP2sh, isNativeSegwit, j,
+    unsigned char amount[8], isNullScript, isOpReturn, isP2sh, isNativeSegwit, j,
         nullAmount = 1;
     unsigned char isOpCreate, isOpCall;
 
     unsigned char valueStart, valueEnd, valueSize, scriptStart;
 
+    PRINTF("Getting value start");
     if(G_coin_config->kind == COIN_KIND_DGLD){
       valueStart=34;
       valueSize=8;
@@ -61,7 +62,8 @@ static bool check_output_displayable() {
       valueEnd=valueStart+valueSize;
       scriptStart=valueEnd;
     }
-    
+
+    PRINTF("Getting amount");
     for (j = valueStart; j < valueEnd; j++) {
         if (btchip_context_D.currentOutput[j] != 0) {
             nullAmount = 0;
@@ -76,32 +78,48 @@ static bool check_output_displayable() {
     }
 
     unsigned char* buffer = btchip_context_D.currentOutput + scriptStart;
-    
-    isOpReturn =
+
+    if(G_coin_config->kind == COIN_KIND_DGLD){
+      PRINTF("Getting isNullScript");
+      isNullScript = btchip_output_script_is_null(buffer);
+      PRINTF("Got isNullScript"); 
+      if(isNullScript && nullAmount){
+	PRINTF("Error : Unrecognized output script (check output displayable): \n%.*H\n",
+	       sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
+	THROW(EXCEPTION);
+      }
+    } else {
+      isNullScript = false;
+    }
+
+    if(!isNullScript){
+      isOpReturn =
         btchip_output_script_is_op_return(buffer);
-    isP2sh = btchip_output_script_is_p2sh(buffer);
-    isNativeSegwit = btchip_output_script_is_native_witness(buffer);
-    isOpCreate =
+      isP2sh = btchip_output_script_is_p2sh(buffer);
+      isNativeSegwit = btchip_output_script_is_native_witness(buffer);
+      isOpCreate =
         btchip_output_script_is_op_create(buffer);
-    isOpCall =
+      isOpCall =
         btchip_output_script_is_op_call(buffer);
-
-    if (((G_coin_config->kind == COIN_KIND_QTUM) &&
-         !btchip_output_script_is_regular(buffer) &&
-         !isP2sh && !(nullAmount && isOpReturn) && !isOpCreate && !isOpCall) ||
-        (!(G_coin_config->kind == COIN_KIND_QTUM) &&
-         !btchip_output_script_is_regular(buffer) &&
-         !isP2sh && !(nullAmount && isOpReturn)) 
-	) {
-      PRINTF("Error : Unrecognized input script (check output displayable): \n%.*H\n",
-	     sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
+      
+      if(((G_coin_config->kind == COIN_KIND_QTUM) &&
+	  !btchip_output_script_is_regular(buffer) &&
+	  !isP2sh && !(nullAmount && isOpReturn) && !isOpCreate && !isOpCall) ||
+	 (!(G_coin_config->kind == COIN_KIND_QTUM) && 
+	  !btchip_output_script_is_regular(buffer) &&
+	  !isP2sh && !(nullAmount && isOpReturn) 
+	  )
+	 ) {
+	PRINTF("Error : Unrecognized input script (check output displayable): \n%.*H\n",
+	       sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
 	     
-      //\nisNativeSegwit: \n%.*H\nisOpCreate:\n%.*H\nisOpCall: \n%.*H\nnullAmount: \n%.*H\namount: \n%.*H\n",
-
-      //sizeof(isNativeSegwit),isNativeSegwit,
-      //     sizeof(isOpCreate),isOpCreate,sizeof(isOpCall),isOpCall,
-      //     sizeof(nullAmount),nullAmount,sizeof(amount),amount);
-      THROW(EXCEPTION);
+	//\nisNativeSegwit: \n%.*H\nisOpCreate:\n%.*H\nisOpCall: \n%.*H\nnullAmount: \n%.*H\namount: \n%.*H\n",
+	
+	//sizeof(isNativeSegwit),isNativeSegwit,
+	//     sizeof(isOpCreate),isOpCreate,sizeof(isOpCall),isOpCall,
+	//     sizeof(nullAmount),nullAmount,sizeof(amount),amount);
+	THROW(EXCEPTION);
+      }
     }
     if (btchip_context_D.tmpCtx.output.changeInitialized && !isOpReturn) {
         bool changeFound = false;
@@ -113,6 +131,7 @@ static bool check_output_displayable() {
             os_memcmp(btchip_context_D.currentOutput + 8 + addressOffset,
                       btchip_context_D.tmpCtx.output.changeAddress + 1,
                       20) == 0) {
+	    PRINTF("Change found.");
             changeFound = true;
         } else if (isP2sh && btchip_context_D.usingSegwit) {
             unsigned char changeSegwit[22];
@@ -124,6 +143,7 @@ static bool check_output_displayable() {
             if (os_memcmp(btchip_context_D.currentOutput + 8 + addressOffset,
                           changeSegwit, 20) == 0) {
                 if (G_coin_config->flags & FLAG_SEGWIT_CHANGE_SUPPORT) {
+		    PRINTF("Change found.");
                     changeFound = true;
                 } else {
                     // Attempt to avoid fatal failures on Bitcoin Cash

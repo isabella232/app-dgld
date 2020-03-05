@@ -125,6 +125,10 @@ unsigned char btchip_output_script_is_op_return(unsigned char *buffer) {
     return (buffer[1] == 0x6A);
 }
 
+unsigned char btchip_output_script_is_null(unsigned char *buffer) {
+  return buffer[0] == 0x00;
+}
+
 unsigned char btchip_output_script_is_op_create(unsigned char *buffer) {
     return (!btchip_output_script_is_regular(buffer) &&
             !btchip_output_script_is_p2sh(buffer) &&
