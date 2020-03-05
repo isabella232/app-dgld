@@ -80,20 +80,20 @@ unsigned short btchip_apdu_hash_sign() {
                 return BTCHIP_SW_OK;
             }
 
-	    // TODO - reenable
-	    //            if (btchip_context_D.transactionContext.transactionState !=
-	    //                BTCHIP_TRANSACTION_SIGN_READY) {
-	    //                PRINTF("Invalid transaction state %d\n", btchip_context_D.transactionContext.transactionState);
-	    //                sw = BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
-	    //                goto discardTransaction;
-	    //            }
+	    if (btchip_context_D.transactionContext.transactionState !=
+		BTCHIP_TRANSACTION_SIGN_READY) {
+	      //PRINTF("Invalid transaction state %d\n", btchip_context_D.transactionContext.transactionState);
+	      sw = BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
+	      goto discardTransaction;
+	    }
 
             if (btchip_context_D.usingOverwinter && !btchip_context_D.overwinterSignReady) {
-                PRINTF("Overwinter not ready to sign\n");
+                //PRINTF("Overwinter not ready to sign\n");
                 sw = BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
                 goto discardTransaction;
             }
 
+	    //PRINTF("Hash sign: read parameters\n");
             // Read parameters
             if (G_io_apdu_buffer[ISO_OFFSET_CDATA] > MAX_BIP32_PATH) {
                 sw = BTCHIP_SW_INCORRECT_DATA;
@@ -129,12 +129,14 @@ unsigned short btchip_apdu_hash_sign() {
                 }
             }
 
+	    //PRINTF("Hash sign: read transaction parameters\n");
             // Read transaction parameters
             // TODO : remove copy
             os_memmove(&transactionSummary,
                        &btchip_context_D.transactionSummary,
                        sizeof(transactionSummary));
 
+	    //PRINTF("Hash sign: fetch the private key - keyPath\n%.*H\n", sizeof(keyPath), keyPath);
             // Fetch the private key
 
             btchip_private_derive_keypair(keyPath, 0, NULL);
@@ -142,6 +144,7 @@ unsigned short btchip_apdu_hash_sign() {
             // TODO optional : check the public key against the associated non
             // blank input to sign
 
+	    //PRINTF("Hash sign: finalize the hash\n");
             // Finalize the hash
 
             if (btchip_context_D.usingOverwinter) {
@@ -150,18 +153,19 @@ unsigned short btchip_apdu_hash_sign() {
             else {
                 btchip_write_u32_le(dataBuffer, lockTime);
                 btchip_write_u32_le(dataBuffer + 4, sighashType);
-                PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
+                //PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
 
                 cx_hash(&btchip_context_D.transactionHashFull.sha256.header, CX_LAST,
                     dataBuffer, sizeof(dataBuffer), hash1, 32);
-                PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
+                //PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
 
                 // Rehash
                 cx_sha256_init(&localHash);
                 cx_hash(&localHash.header, CX_LAST, hash1, sizeof(hash1), hash2, 32);
             }
-            PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
+            //PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
 
+	    //PRINTF("Hash sign: sign\n");
             // Sign
             btchip_signverify_finalhash(
                 &btchip_private_key_D, 1, hash2, sizeof(hash2),

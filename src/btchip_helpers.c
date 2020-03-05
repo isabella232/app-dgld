@@ -63,7 +63,8 @@ unsigned char btchip_output_script_is_regular(unsigned char *buffer) {
         if ((os_memcmp(buffer, TRANSACTION_OUTPUT_SCRIPT_P2WPKH_PRE,
                        sizeof(TRANSACTION_OUTPUT_SCRIPT_P2WPKH_PRE)) == 0) ||
             (os_memcmp(buffer, TRANSACTION_OUTPUT_SCRIPT_P2WSH_PRE,
-                       sizeof(TRANSACTION_OUTPUT_SCRIPT_P2WSH_PRE)) == 0)) {
+                       sizeof(TRANSACTION_OUTPUT_SCRIPT_P2WSH_PRE)) == 0)
+	    ) {
             return 1;
         }
     }
@@ -165,18 +166,21 @@ unsigned long int btchip_read_u32(unsigned char *buffer, unsigned char be,
     unsigned char i;
     unsigned long int result = 0;
     unsigned char shiftValue = (be ? 24 : 0);
+    //PRINTF("btchip_read_u32\n");
     for (i = 0; i < 4; i++) {
         unsigned char x = (unsigned char)buffer[i];
         if ((i == 0) && skipSign) {
             x &= 0x7f;
         }
         result += ((unsigned long int)x) << shiftValue;
+	//PRINTF("Intermediate result\n%d\n", result);
         if (be) {
             shiftValue -= 8;
         } else {
             shiftValue += 8;
         }
     }
+    //PRINTF("Final result\n%d\n", result);
     return result;
 }
 
@@ -201,7 +205,7 @@ void btchip_retrieve_keypair_discard(unsigned char *privateComponent,
             cx_ecdsa_init_private_key(BTCHIP_CURVE, privateComponent, 32,
                                       &btchip_private_key_D);
 
-            PRINTF("Using private component\n%.*H\n",32,privateComponent);
+            //PRINTF("Using private component\n%.*H\n",32,privateComponent);
 
             if (derivePublic) {
                 cx_ecfp_generate_pair(BTCHIP_CURVE, &btchip_public_key_D,
@@ -239,9 +243,9 @@ unsigned short btchip_public_key_to_encoded_base58(
     size_t outputLen;
 
     if (!alreadyHashed) {
-        PRINTF("To hash\n%.*H\n",inlen,in);
+        //PRINTF("To hash\n%.*H\n",inlen,in);
         btchip_public_key_hash160(in, inlen, tmpBuffer + versionSize);
-        PRINTF("Hash160\n%.*H\n",20,(tmpBuffer + versionSize));
+        //PRINTF("Hash160\n%.*H\n",20,(tmpBuffer + versionSize));
         if (version > 255) {
             tmpBuffer[0] = (version >> 8);
             tmpBuffer[1] = version;
@@ -257,7 +261,7 @@ unsigned short btchip_public_key_to_encoded_base58(
     cx_sha256_init(&hash);
     cx_hash(&hash.header, CX_LAST, checksumBuffer, 32, checksumBuffer, 32);
 
-    PRINTF("Checksum\n%.*H\n",4,checksumBuffer);
+    //PRINTF("Checksum\n%.*H\n",4,checksumBuffer);
     os_memmove(tmpBuffer + 20 + versionSize, checksumBuffer, 4);
 
     outputLen = outlen;
@@ -294,7 +298,7 @@ unsigned short btchip_decode_base58_address(unsigned char *in,
     cx_hash(&hash.header, CX_LAST, hashBuffer, 32, hashBuffer, 32);
 
     if (os_memcmp(out + outlen - 4, hashBuffer, 4)) {
-        PRINTF("Hash checksum mismatch\n%.*H\n",sizeof(hashBuffer),hashBuffer);
+        //PRINTF("Hash checksum mismatch\n%.*H\n",sizeof(hashBuffer),hashBuffer);
         THROW(INVALID_CHECKSUM);
     }
 
@@ -310,19 +314,27 @@ void btchip_private_derive_keypair(unsigned char *bip32Path,
     unsigned char privateComponent[32];
 
     bip32PathLength = bip32Path[0];
+    //PRINTF("bip32 path length =  %u\n", bip32PathLength);
     if (bip32PathLength > MAX_BIP32_PATH) {
+      //      //PRINTF("btchip_private_derive_keypair: bip32PathLength > MAX\n%d", bip32PathLength);
         THROW(INVALID_PARAMETER);
     }
     bip32Path++;
+    //    //PRINTF("btchip_private_derive_keypair: decoding path\n");
     for (i = 0; i < bip32PathLength; i++) {
+      //PRINTF("decoding path int %u\n", i);
         bip32PathInt[i] = btchip_read_u32(bip32Path, 1, 0);
+        //PRINTF("%d\n", bip32PathInt[i]);
         bip32Path += 4;
     }
     io_seproxyhal_io_heartbeat();
+    //PRINTF("btchip_private_derive_keypair: deriving node");
     os_perso_derive_node_bip32(CX_CURVE_256K1, bip32PathInt, bip32PathLength,
-                               privateComponent, out_chainCode);    
+                               privateComponent, out_chainCode);
+    //PRINTF("btchip_private_derive_keypair: retreiving keypair");
     btchip_retrieve_keypair_discard(privateComponent, derivePublic);
     io_seproxyhal_io_heartbeat();
+    //PRINTF("btchip_private_derive_keypair: copying private component");
     os_memset(privateComponent, 0, sizeof(privateComponent));
 }
 
