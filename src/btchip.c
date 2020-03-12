@@ -65,8 +65,10 @@ void app_dispatch(void) {
                 // io_exchange(CHANNEL_APDU | IO_RECEIVE_DATA, 0);
             }
             // call the apdu handler
+	    //PRINTF("Calling APDU handler\n");
             btchip_context_D.sw = ((apduProcessingFunction)PIC(
                 DISPATCHER_FUNCTIONS[dispatched]))();
+	    //PRINTF("sw reply from APDU handler:\n%d\n", btchip_context_D.sw);
 
 // an APDU has been replied. request for power off time extension from the
 // common ux

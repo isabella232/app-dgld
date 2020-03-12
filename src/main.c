@@ -2169,8 +2169,7 @@ uint8_t prepare_single_output() {
             (unsigned char *)(vars.tmp.fullAmount +
                           btchip_context_D.shortCoinIdLength + 1);
         textSize = btchip_convert_hex_amount_to_displayable(amount);
-	//PRINTF("Amount string: \n%.*H\n",
-	//       sizeof(amount),amount);
+	//PRINTF("Amount string: \n%.*H\n",sizeof(amount),amount);
         vars.tmp.fullAmount[textSize + btchip_context_D.shortCoinIdLength + 1] =
             '\0';
     }

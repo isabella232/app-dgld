@@ -170,7 +170,7 @@ unsigned long int btchip_read_u32(unsigned char *buffer, unsigned char be,
     unsigned char i;
     unsigned long int result = 0;
     unsigned char shiftValue = (be ? 24 : 0);
-    //PRINTF("btchip_read_u32\n");
+    PRINTF("btchip_read_u32\n");
     for (i = 0; i < 4; i++) {
         unsigned char x = (unsigned char)buffer[i];
         if ((i == 0) && skipSign) {
@@ -184,7 +184,7 @@ unsigned long int btchip_read_u32(unsigned char *buffer, unsigned char be,
             shiftValue += 8;
         }
     }
-    //PRINTF("Final result\n%d\n", result);
+    PRINTF("Final result\n%d\n", result);
     return result;
 }
 

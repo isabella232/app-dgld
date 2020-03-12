@@ -80,7 +80,7 @@ unsigned short btchip_apdu_get_trusted_input() {
         btchip_set_check_internal_structure_integrity(1);
         if (!btchip_context_D.trustedInputProcessed) {
             // Output was not found
-	    PRINTF("Output was not found.\n");
+	    //PRINTF("Output was not found.\n");
             return BTCHIP_SW_INCORRECT_DATA;
         }
 
