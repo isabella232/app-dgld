@@ -26,6 +26,7 @@ unsigned short btchip_apdu_hash_sign() {
     unsigned char dataBuffer[8];
     unsigned char hash1[32];
     unsigned char hash2[32];
+    unsigned char hash3[32];
     unsigned char authorizationLength;
     unsigned char *parameters = G_io_apdu_buffer + ISO_OFFSET_CDATA;
     btchip_transaction_summary_t
@@ -130,8 +131,8 @@ unsigned short btchip_apdu_hash_sign() {
                     }
                 }
             }
-	    PRINTF("buffer 3\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
-	    //PRINTF("Hash sign: read transaction parameters\n");
+	    //PRINTF("buffer 3\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
+	    //PRINTF("Hash sign: finished read transaction parameters\n");
             // Read transaction parameters
             // TODO : remove copy
             os_memmove(&transactionSummary,
@@ -160,7 +161,7 @@ unsigned short btchip_apdu_hash_sign() {
             else {
                 btchip_write_u32_le(dataBuffer, lockTime);
                 btchip_write_u32_le(dataBuffer + 4, sighashType);
-                PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
+                //PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
 
 		if (!os_global_pin_is_validated()) {
 		  return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
@@ -168,7 +169,7 @@ unsigned short btchip_apdu_hash_sign() {
 		
                 cx_hash(&btchip_context_D.transactionHashFull.sha256.header, CX_LAST,
                     dataBuffer, sizeof(dataBuffer), hash1, 32);
-                PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
+                //PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
 
 		if (!os_global_pin_is_validated()) {
 		  return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
@@ -183,7 +184,7 @@ unsigned short btchip_apdu_hash_sign() {
 		
                 cx_hash(&localHash.header, CX_LAST, hash1, sizeof(hash1), hash2, 32);
             }
-            PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
+            //PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
 
 	    //PRINTF("Hash sign: sign\n");
 	    if (!os_global_pin_is_validated()) {
@@ -193,23 +194,31 @@ unsigned short btchip_apdu_hash_sign() {
 	    //PRINTF("Outlength 0\n%d\n", btchip_context_D.outLength);
 	    
             // Sign
-	    PRINTF("buffer 4\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
-            btchip_signverify_finalhash(
-	                    &btchip_private_key_D, 1, hash2, sizeof(hash2),
-	                    G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
-	                    ((N_btchip.bkp.config.options &
-	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
-	    //	    //PRINTF("buffer 5\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
+	    //PRINTF("buffer 4\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
+	    //            btchip_signverify_finalhash(
+	    //	                    &btchip_private_key_D, 1, hash2, sizeof(hash2),
+	    //	                    G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
+	    //	                    ((N_btchip.bkp.config.options &
+	    //	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
+
+	    //	    btchip_signverify_finalhash(
+	                    &btchip_private_key_D, 0, 
+			      //	                    G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
+			      //			    hash3, sizeof(hash3),
+			      ///	                    ((N_btchip.bkp.config.options &
+			      //	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
+		
+	    //PRINTF("buffer 5\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
 	    //PRINTF("buffer length\n%d\n", sizeof(G_io_apdu_buffer));
 	    //PRINTF("buffer[1]\n%d\n",G_io_apdu_buffer[1]);
 	    //PRINTF("outlength 1\n%d\n", G_io_apdu_buffer[1]+2);
 	    //PRINTF("Setting outlength");
 	    btchip_context_D.outLength = G_io_apdu_buffer[1] + 2;
 	    //PRINTF("Finished seting outlength");
-	    PRINTF("Outlength\n%d\n", btchip_context_D.outLength);
+	    //PRINTF("Outlength\n%d\n", btchip_context_D.outLength);
 	    //PRINTF("sighashType\n%d\n", sighashType);
 	    G_io_apdu_buffer[btchip_context_D.outLength++] = sighashType;
-	    PRINTF("buffer 6\n%.*H\n", btchip_context_D.outLength, G_io_apdu_buffer);
+	    //PRINTF("buffer 6\n%.*H\n", btchip_context_D.outLength, G_io_apdu_buffer);
 
 	    //PRINTF("Hash sign: finished`\n");
 
@@ -226,7 +235,7 @@ unsigned short btchip_apdu_hash_sign() {
         }
         FINALLY {
 	  btchip_set_check_internal_structure_integrity(1);
-	  PRINTF("Hash sign: returning`\n");
+	  //PRINTF("Hash sign: returning`\n");
 	  return sw;
         }
     }

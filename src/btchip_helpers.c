@@ -170,21 +170,18 @@ unsigned long int btchip_read_u32(unsigned char *buffer, unsigned char be,
     unsigned char i;
     unsigned long int result = 0;
     unsigned char shiftValue = (be ? 24 : 0);
-    PRINTF("btchip_read_u32\n");
     for (i = 0; i < 4; i++) {
         unsigned char x = (unsigned char)buffer[i];
         if ((i == 0) && skipSign) {
             x &= 0x7f;
         }
         result += ((unsigned long int)x) << shiftValue;
-	//PRINTF("Intermediate result\n%d\n", result);
         if (be) {
             shiftValue -= 8;
         } else {
             shiftValue += 8;
         }
     }
-    PRINTF("Final result\n%d\n", result);
     return result;
 }
 
@@ -462,6 +459,7 @@ void btchip_signverify_finalhash(void *keyContext, unsigned char sign,
     io_seproxyhal_io_heartbeat();
     if (sign) {
         unsigned int info = 0;
+	PRINTF("btchip_signverify_finalhash: Signing\n");
         cx_ecdsa_sign((cx_ecfp_private_key_t *)keyContext,
                       CX_LAST | (rfc6979 ? CX_RND_RFC6979 : CX_RND_TRNG),
                       CX_SHA256, in, inlen, out, outlen, &info);
@@ -469,6 +467,7 @@ void btchip_signverify_finalhash(void *keyContext, unsigned char sign,
             out[0] |= 0x01;
         }
     } else {
+      	PRINTF("btchip_signverify_finalhash: Verifying\n");
         cx_ecdsa_verify((cx_ecfp_public_key_t *)keyContext, CX_LAST,
                         CX_SHA256, in, inlen, out, outlen);
     }
