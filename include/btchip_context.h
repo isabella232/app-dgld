@@ -127,7 +127,7 @@ struct btchip_transaction_context_s {
     unsigned char transactionState;
     /** Computed sum of transaction inputs or value of the output to convert to
      * a trusted input */
-    unsigned char transactionAmount[33];
+    unsigned char transactionAmount[8];
     /** Flag indicating if this transaction has been processed before */
     unsigned char firstSigned;
     /** If the transaction is relaxed */

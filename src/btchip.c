@@ -65,10 +65,10 @@ void app_dispatch(void) {
                 // io_exchange(CHANNEL_APDU | IO_RECEIVE_DATA, 0);
             }
             // call the apdu handler
-	    //PRINTF("Calling APDU handler\n");
+	    PRINTF("Calling APDU handler\n");
             btchip_context_D.sw = ((apduProcessingFunction)PIC(
                 DISPATCHER_FUNCTIONS[dispatched]))();
-	    //PRINTF("sw reply from APDU handler:\n%d\n", btchip_context_D.sw);
+	    PRINTF("sw reply from APDU handler:\n%d\n", btchip_context_D.sw);
 
 // an APDU has been replied. request for power off time extension from the
 // common ux
@@ -118,14 +118,14 @@ void app_main(void) {
                         // use the previous outlength as the reply
                         btchip_context_D.outLength);
 
-        //PRINTF("New APDU received:\n%.*H\n", btchip_context_D.inLength, G_io_apdu_buffer);
+        PRINTF("New APDU received:\n%.*H\n", btchip_context_D.inLength, G_io_apdu_buffer);
 
         app_dispatch();
 
         // reply during reception of next apdu
     }
 
-    //PRINTF("End of main loop\n");
+    PRINTF("End of main loop\n");
 
     // in case reached
     reset();

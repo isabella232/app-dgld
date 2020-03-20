@@ -169,7 +169,7 @@ unsigned short btchip_apdu_hash_sign() {
 		
                 cx_hash(&btchip_context_D.transactionHashFull.sha256.header, CX_LAST,
                     dataBuffer, sizeof(dataBuffer), hash1, 32);
-                //PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
+		PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
 
 		if (!os_global_pin_is_validated()) {
 		  return BTCHIP_SW_SECURITY_STATUS_NOT_SATISFIED;
@@ -195,14 +195,14 @@ unsigned short btchip_apdu_hash_sign() {
 	    
             // Sign
 	    //PRINTF("buffer 4\n%.*H\n", sizeof(G_io_apdu_buffer), G_io_apdu_buffer);
-	    //            btchip_signverify_finalhash(
-	    //	                    &btchip_private_key_D, 1, hash2, sizeof(hash2),
-	    //	                    G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
-	    //	                    ((N_btchip.bkp.config.options &
-	    //	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
+	    btchip_signverify_finalhash(
+					&btchip_private_key_D, 1, hash2, sizeof(hash2),
+					G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
+					((N_btchip.bkp.config.options &
+					  BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
 
 	    //	    btchip_signverify_finalhash(
-	                    &btchip_private_key_D, 0, 
+	    //	                    &btchip_private_key_D, 0, 
 			      //	                    G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
 			      //			    hash3, sizeof(hash3),
 			      ///	                    ((N_btchip.bkp.config.options &
@@ -220,14 +220,15 @@ unsigned short btchip_apdu_hash_sign() {
 	    G_io_apdu_buffer[btchip_context_D.outLength++] = sighashType;
 	    //PRINTF("buffer 6\n%.*H\n", btchip_context_D.outLength, G_io_apdu_buffer);
 
-	    //PRINTF("Hash sign: finished`\n");
-
+	    PRINTF("Hash sign: finished - io exchange\n");
+	    //TODO
 	    io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, btchip_context_D.outLength);
             sw = BTCHIP_SW_OK;
 
             // Then discard the transaction and reply
         }
         CATCH_ALL {
+  	  PRINTF("Hash sign: exception caught\n");
             sw = SW_TECHNICAL_DETAILS(0xF);
         catch_discardTransaction:
             btchip_context_D.transactionContext.transactionState =
@@ -235,7 +236,7 @@ unsigned short btchip_apdu_hash_sign() {
         }
         FINALLY {
 	  btchip_set_check_internal_structure_integrity(1);
-	  //PRINTF("Hash sign: returning`\n");
+	  PRINTF("Hash sign: returning`\n");
 	  return sw;
         }
     }
