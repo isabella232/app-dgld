@@ -76,16 +76,18 @@ unsigned char transaction_amount_sub_be(unsigned char *target,
 }
 
 void transaction_offset(unsigned char value) {
-    if ((btchip_context_D.transactionHashOption & TRANSACTION_HASH_FULL) != 0) {
-      PRINTF("Add to hash full\n%.*H\n",value,btchip_context_D.transactionBufferPointer);
+  //  unsigned char hash_debug[32];
+  if ((btchip_context_D.transactionHashOption & TRANSACTION_HASH_FULL) != 0) {
+    //      PRINTF("Add to hash full\n%.*H\n",value,btchip_context_D.transactionBufferPointer);
         if (btchip_context_D.usingOverwinter) {
             cx_hash(&btchip_context_D.transactionHashFull.blake2b.header, 0, btchip_context_D.transactionBufferPointer, value, NULL, 0);
         }
         else {
             cx_hash(&btchip_context_D.transactionHashFull.sha256.header, 0,
-		    btchip_context_D.transactionBufferPointer, value, hash_debug, sizeof(hash_debug));
+		    //	    btchip_context_D.transactionBufferPointer, value, hash_debug, sizeof(hash_debug));
+		    btchip_context_D.transactionBufferPointer, value, NULL, 0);
         }
-	PRINTF("Current hash full:\n%.*H\n",sizeof(hash_debug),hash_debug;
+	//	PRINTF("Current hash full:\n%.*H\n",sizeof(hash_debug),hash_debug);
     }
     if ((btchip_context_D.transactionHashOption &
          TRANSACTION_HASH_AUTHORIZATION) != 0) {
@@ -421,8 +423,21 @@ void transaction_parse(unsigned char parseMode) {
                                     PRINTF("Overflow\n");
                                     goto fail;
                                 }
-                                PRINTF("Adding amount\n%.*H\n",8,btchip_context_D.transactionBufferPointer);
-                                PRINTF("New amount\n%.*H\n",8,btchip_context_D.transactionContext.transactionAmount);
+
+
+				//				unsigned char amount_dbg[8];
+				//				os_memmove(amount_dbg,
+					   //					   btchip_context_D.transactionBufferPointer,
+					   //					   sizeof(amount_dbg));
+				//				btchip_convert_hex_amount_to_displayable(amount_dbg);
+				//				PRINTF("parse_transaction");
+				//				PRINTF("Adding amount: \n%.*H\n",sizeof(amount_dbg),amount_dbg);
+				//				os_memmove(amount_dbg,
+				//	   &btchip_context_D.transactionContext.transactionAmount,
+				//					   sizeof(amount_dbg));
+				//				btchip_convert_hex_amount_to_displayable(amount_dbg);
+				//				PRINTF("New amount: \n%.*H\n",sizeof(amount_dbg),amount_dbg);
+				
                                 transaction_offset_increase(8);
                             } else {
                                 btchip_context_D.transactionHashOption =
@@ -534,12 +549,14 @@ void transaction_parse(unsigned char parseMode) {
                                 goto fail;
                             }
 
-			    unsigned int transactionAmount = btchip_read_u32(&amount,
-									     1, 0);
-			    PRINTF("parse_transaction: input amount(BE)\n%d\n", transactionAmount);
-			    transactionAmount = btchip_read_u32(&amount, 
-								0, 0);
-			    PRINTF("parse_transaction: input amount(LE)\n%d\n", transactionAmount);
+			    //			    unsigned char amount_debug[8];
+			    //			    os_memmove(amount_debug,
+			    //				       amount,
+			    //				       sizeof(amount_debug));
+			    //			    btchip_convert_hex_amount_to_displayable(amount_debug);
+			    //			    PRINTF("parse_transaction");
+			    //			    PRINTF("Transaction amount: \n%.*H\n",sizeof(amount_debug),amount_debug);
+			    
                         }
 
                         if (!btchip_context_D.usingSegwit) {
@@ -792,7 +809,7 @@ void transaction_parse(unsigned char parseMode) {
                         goto ok;
                     }
 
-		    if(!G_coin_config->kind == COIN_KIND_DGLD){
+		    if(G_coin_config->kind != COIN_KIND_DGLD){
 		      // Amount
 		      check_transaction_available(8);
 		      if ((parseMode == PARSE_MODE_TRUSTED_INPUT) &&
@@ -860,15 +877,13 @@ void transaction_parse(unsigned char parseMode) {
 				   btchip_context_D.transactionBufferPointer,
 				   varSizeBytes);
 
-			unsigned int transactionAmount = btchip_read_u32(&amount,
-									 1, 0);
-			PRINTF("parse_transaction: input amount(BE)\n%d\n", transactionAmount);
-			transactionAmount = btchip_read_u32(&amount, 
-							    0, 0);
-			PRINTF("parse_transaction: input amount(LE)\n%d\n", transactionAmount);
-			
-   			PRINTF("Trusted input amount\n%.*H\n",varSizeBytes,btchip_context_D.transactionContext
-			       .transactionAmount);
+			//unsigned char amount_dbg[8];
+			//			PRINTF("parse_transaction");
+			//			os_memmove(amount_dbg,
+			//				   &btchip_context_D.transactionContext.transactionAmount,
+			//				   sizeof(amount_dbg));
+			//			btchip_convert_hex_amount_to_displayable(amount_dbg);
+			//			PRINTF("Transaction amount: \n%.*H\n",sizeof(amount_dbg),amount_dbg);
 		      }
 		      transaction_offset_increase(varSizeBytes);
 		      

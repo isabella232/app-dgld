@@ -2169,7 +2169,7 @@ uint8_t prepare_single_output() {
             (unsigned char *)(vars.tmp.fullAmount +
                           btchip_context_D.shortCoinIdLength + 1);
         textSize = btchip_convert_hex_amount_to_displayable(amount);
-	//PRINTF("Amount string: \n%.*H\n",sizeof(amount),amount);
+	PRINTF("Amount string: \n%.*H\n",sizeof(amount),amount);
         vars.tmp.fullAmount[textSize + btchip_context_D.shortCoinIdLength + 1] =
             '\0';
     }
@@ -2648,6 +2648,7 @@ btchip_altcoin_config_t const C_coin_config = {
 };
 
 __attribute__((section(".boot"))) int main(int arg0) {
+
 #ifdef USE_LIB_BITCOIN
     // in RAM allocation (on stack), to allow simple simple traversal into the
     // bitcoin app (separate NVRAM zone)

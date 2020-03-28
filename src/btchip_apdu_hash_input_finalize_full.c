@@ -50,12 +50,12 @@ static bool check_output_displayable() {
 
     unsigned char valueStart, valueEnd, valueSize, scriptStart;
 
-    PRINTF("Getting value start");
+    PRINTF("Getting value start\n");
     if(G_coin_config->kind == COIN_KIND_DGLD){
       valueStart=34;
       valueSize=8;
       valueEnd=valueStart+valueSize;
-      scriptStart=valueEnd+1; //An additional bite is used for a nonce
+      scriptStart=valueEnd+1; //An additional byte is used for a nonce
     } else {
       valueStart=0;
       valueSize=8;
@@ -63,7 +63,7 @@ static bool check_output_displayable() {
       scriptStart=valueEnd;
     }
 
-    PRINTF("Getting amount");
+    PRINTF("Getting amount\n");
     for (j = valueStart; j < valueEnd; j++) {
         if (btchip_context_D.currentOutput[j] != 0) {
             nullAmount = 0;
@@ -101,9 +101,21 @@ static bool check_output_displayable() {
 				btchip_context_D.totalOutputAmount, amount);
     }
 
-    PRINTF("Total output amount: : \n%.*H\n",sizeof(btchip_context_D.totalOutputAmount), btchip_context_D.totalOutputAmount);
-    PRINTF("Transaction amount: : \n%.*H\n",sizeof(btchip_context_D.transactionContext.transactionAmount), btchip_context_D.transactionContext.transactionAmount);
+    //    PRINTF("Total output amount: : \n%.*H\n",sizeof(btchip_context_D.totalOutputAmount), btchip_context_D.totalOutputAmount);
+    //    PRINTF("Transaction amount: : \n%.*H\n",sizeof(btchip_context_D.transactionContext.transactionAmount), btchip_context_D.transactionContext.transactionAmount);
 
+    //    unsigned char amount_debug[8];
+    //    os_memmove(amount_debug,
+    //	       &btchip_context_D.transactionContext.transactionAmount,
+    //	       sizeof(amount_debug));
+    //    btchip_convert_hex_amount_to_displayable(amount_debug);
+    //    PRINTF("check_output_displayable");
+    //    PRINTF("Transaction amount: \n%.*H\n",sizeof(amount_debug),amount_debug);
+    //    os_memmove(amount_debug,
+    //	       &btchip_context_D.totalOutputAmount,
+    //	       sizeof(amount_debug));
+    //    btchip_convert_hex_amount_to_displayable(amount_debug);
+    //    PRINTF("Total output amount: \n%.*H\n",sizeof(amount_debug),amount_debug);
 
     if(!isNullScript){
       isP2sh = btchip_output_script_is_p2sh(buffer);
@@ -740,11 +752,11 @@ unsigned char btchip_bagl_user_action(unsigned char confirming) {
         (btchip_context_D.outputParsingState == BTCHIP_OUTPUT_HANDLE_LEGACY) ||
         (sw != BTCHIP_SW_OK)) {
         // we've finished the processing of the input
-        PRINTF("user_action: processing finished"); 
+        PRINTF("user_action: processing finished\n"); 
         btchip_apdu_hash_input_finalize_full_reset();
     }
 
-    PRINTF("user_action: io_exchange"); 
+    PRINTF("user_action: io_exchange\n"); 
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, btchip_context_D.outLength);
 
     return 0;
