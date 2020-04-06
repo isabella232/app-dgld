@@ -26,10 +26,10 @@
 
 void check_transaction_available(unsigned char x) {
     if (btchip_context_D.transactionDataRemaining < x) {
-        PRINTF("Check transaction available failed %d < %d\n", btchip_context_D.transactionDataRemaining, x);
+        //PRINTF("Check transaction available failed %d < %d\n", btchip_context_D.transactionDataRemaining, x);
         THROW(EXCEPTION);
     }
-    PRINTF("Check transaction available succeeded: %d > %d\n", btchip_context_D.transactionDataRemaining, x);
+    //PRINTF("Check transaction available succeeded: %d > %d\n", btchip_context_D.transactionDataRemaining, x);
 }
 
 #define OP_HASH160 0xA9
@@ -78,7 +78,7 @@ unsigned char transaction_amount_sub_be(unsigned char *target,
 void transaction_offset(unsigned char value) {
   //  unsigned char hash_debug[32];
   if ((btchip_context_D.transactionHashOption & TRANSACTION_HASH_FULL) != 0) {
-    //      PRINTF("Add to hash full\n%.*H\n",value,btchip_context_D.transactionBufferPointer);
+    //PRINTF("transaction_offset: Add to hash full\n%.*H\n",value,btchip_context_D.transactionBufferPointer);
         if (btchip_context_D.usingOverwinter) {
             cx_hash(&btchip_context_D.transactionHashFull.blake2b.header, 0, btchip_context_D.transactionBufferPointer, value, NULL, 0);
         }
@@ -87,7 +87,7 @@ void transaction_offset(unsigned char value) {
 		    //	    btchip_context_D.transactionBufferPointer, value, hash_debug, sizeof(hash_debug));
 		    btchip_context_D.transactionBufferPointer, value, NULL, 0);
         }
-	//	PRINTF("Current hash full:\n%.*H\n",sizeof(hash_debug),hash_debug);
+	//	//PRINTF("Current hash full:\n%.*H\n",sizeof(hash_debug),hash_debug);
     }
     if ((btchip_context_D.transactionHashOption &
          TRANSACTION_HASH_AUTHORIZATION) != 0) {
@@ -97,23 +97,24 @@ void transaction_offset(unsigned char value) {
 }
 
 void transaction_offset_increase(unsigned char value) {
+    PRINTF("transaction_offset_increase: Add to hash full\n%.*H\n",value,btchip_context_D.transactionBufferPointer);
     transaction_offset(value);
     btchip_context_D.transactionBufferPointer += value;
     btchip_context_D.transactionDataRemaining -= value;
 }
 
 unsigned long int transaction_get_varint(void) {
-    PRINTF("transaction_get_varint - reading first byte\n");
+    //PRINTF("transaction_get_varint - reading first byte\n");
     unsigned char firstByte;
     check_transaction_available(1);
     firstByte = *btchip_context_D.transactionBufferPointer;
-    PRINTF("transaction_get_varint - read first byte\n");
+    //PRINTF("transaction_get_varint - read first byte\n");
     if (firstByte < 0xFD) {
-        PRINTF("transaction_get_varint - 1 byte\n");
+        //PRINTF("transaction_get_varint - 1 byte\n");
         transaction_offset_increase(1);
         return firstByte;
     } else if (firstByte == 0xFD) {
-        PRINTF("transaction_get_varint - 2 bytes\n");
+        //PRINTF("transaction_get_varint - 2 bytes\n");
         unsigned long int result;
         transaction_offset_increase(1);
         check_transaction_available(2);
@@ -125,7 +126,7 @@ unsigned long int transaction_get_varint(void) {
         transaction_offset_increase(2);
         return result;
     } else if (firstByte == 0xFE) {
-        PRINTF("transaction_get_varint - 4 bytes\n");
+        //PRINTF("transaction_get_varint - 4 bytes\n");
         unsigned long int result;
         transaction_offset_increase(1);
         check_transaction_available(4);
@@ -134,7 +135,7 @@ unsigned long int transaction_get_varint(void) {
         transaction_offset_increase(4);
         return result;
     } else {
-        PRINTF("Varint parsing failed\n");
+        //PRINTF("Varint parsing failed\n");
         THROW(INVALID_PARAMETER);
         return 0;
     }
@@ -180,6 +181,7 @@ void transaction_parse(unsigned char parseMode) {
                     }
                     else {
 		      PRINTF("Not using overwinter...\n");
+		      PRINTF("Initializing tx hash\n");
                         cx_sha256_init(&btchip_context_D.transactionHashFull.sha256);
                     }
                     cx_sha256_init(
@@ -287,16 +289,16 @@ void transaction_parse(unsigned char parseMode) {
                     }
 
 		    //If using DGLD, the next byte to read in will be a 'flag'.
-                    if(G_coin_config->kind == COIN_KIND_DGLD){
-		      PRINTF("Coin kind DGLD - reading flag...\n");
+                    if(G_coin_config->kind == COIN_KIND_DGLD){  
+		      //		      		      PRINTF("Coin kind DGLD - reading flag...\n");
                         //Flag
-		      PRINTF("Checking transaction available...\n");
-                        check_transaction_available(1);
-			PRINTF("Copying flag data...\n");
-			btchip_context_D.transactionContext.transactionFlag =
-			  *btchip_context_D.transactionBufferPointer;
-			PRINTF("Increasing transaction offset...\n");
-                        transaction_offset_increase(1);
+		      	//	      PRINTF("Checking transaction available...\n");
+		      //		                              check_transaction_available(1);
+		      //		      			PRINTF("Copying flag data...\n");
+		      //		btchip_context_D.transactionContext.transactionFlag =
+		      //		  *btchip_context_D.transactionBufferPointer;
+		      //		PRINTF("Increasing transaction offset...\n");
+		      //                      transaction_offset_increase(1);
                     }
 
                     // Number of inputs
@@ -344,7 +346,7 @@ void transaction_parse(unsigned char parseMode) {
                     }
                     // Proceed with the next input
                     if (parseMode == PARSE_MODE_TRUSTED_INPUT) {
-		        PRINTF("Parse mode: trusted input\n");
+		        PRINTF("Parse mode: trusted input. Getting prevout hash and index.\n");
                         check_transaction_available(
                             36); // prevout : 32 hash + 4 index
                         transaction_offset_increase(36);
@@ -734,6 +736,7 @@ void transaction_parse(unsigned char parseMode) {
                                 cx_hash(&btchip_context_D.transactionHashFull
                                          .sha256.header,
                                     CX_LAST, hashedSequence, 0, hashedSequence, 32);
+				PRINTF("Initializing tx hash\n");
                                 cx_sha256_init(
                                     &btchip_context_D.transactionHashFull.sha256);
                                 cx_hash(&btchip_context_D.transactionHashFull
@@ -774,6 +777,7 @@ void transaction_parse(unsigned char parseMode) {
                             }
                             else
                             if (btchip_context_D.usingSegwit) {
+			        PRINTF("Using segwit - initializing tx hash\n");
                                 cx_sha256_init(&btchip_context_D.transactionHashFull.sha256);
                             }
                         }

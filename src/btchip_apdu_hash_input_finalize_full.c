@@ -418,6 +418,8 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                     cx_hash(&btchip_context_D.transactionHashFull.blake2b.header, 0, G_io_apdu_buffer + ISO_OFFSET_CDATA + hashOffset, apduLength - hashOffset, NULL, 0);
                 }
                 else {
+		      
+		  PRINTF("hash_input_finalize_full: add to tx hash full\n%.*H\n",apduLength - hashOffset,G_io_apdu_buffer + ISO_OFFSET_CDATA + hashOffset);
                     cx_hash(&btchip_context_D.transactionHashFull.sha256.header, 0,
                         G_io_apdu_buffer + ISO_OFFSET_CDATA + hashOffset,
                         apduLength - hashOffset, NULL, 0);
@@ -498,6 +500,7 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                             CX_LAST,
                             btchip_context_D.segwit.cache.hashedOutputs, 0,
                             btchip_context_D.segwit.cache.hashedOutputs, 32);
+			PRINTF("init tx hash\n");
                         cx_sha256_init(&btchip_context_D.transactionHashFull.sha256);
                         cx_hash(&btchip_context_D.transactionHashFull.sha256.header,
                             CX_LAST,

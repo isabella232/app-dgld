@@ -68,7 +68,7 @@ unsigned short btchip_apdu_get_trusted_input() {
 
     PRINTF("Parse trusted input...\n");
     transaction_parse(PARSE_MODE_TRUSTED_INPUT);
-    PRINTF("Finished parsing.\n");
+    PRINTF("Finished parsing trusted input.\n");
 	
     if (btchip_context_D.transactionContext.transactionState ==
         BTCHIP_TRANSACTION_PARSED) {

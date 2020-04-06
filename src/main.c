@@ -2005,6 +2005,7 @@ unsigned char io_event(unsigned char channel) {
 }
 
 uint8_t prepare_fees() {
+    PRINTF("Preparing fees");
     if (btchip_context_D.transactionContext.relaxed) {
         os_memmove(vars.tmp.feesAmount, "UNKNOWN", 7);
         vars.tmp.feesAmount[7] = '\0';
@@ -2022,7 +2023,7 @@ uint8_t prepare_fees() {
         }
         else {
             if (borrow) {
-                //PRINTF("Error : Fees not consistent");
+                PRINTF("Error : Fees not consistent");
                 goto error;
             }
             os_memmove(vars.tmp.feesAmount, btchip_context_D.shortCoinId,
