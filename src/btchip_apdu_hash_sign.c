@@ -28,8 +28,6 @@ unsigned short btchip_apdu_hash_sign() {
     unsigned char hash2[32];
     unsigned char authorizationLength;
     unsigned char *parameters = G_io_apdu_buffer + ISO_OFFSET_CDATA;
-    //    btchip_transaction_summary_t
-    //        transactionSummary; // could be removed with a refactor
     unsigned short sw;
     unsigned char keyPath[MAX_BIP32_PATH_LENGTH];
     cx_sha256_t localHash;
@@ -129,10 +127,6 @@ unsigned short btchip_apdu_hash_sign() {
             }
 
             // Read transaction parameters
-            // TODO : remove copy
-	    //            os_memmove(&transactionSummary,
-	    //                       &btchip_context_D.transactionSummary,
-	    //                       sizeof(transactionSummary));
 
             // Fetch the private key
 
@@ -149,30 +143,24 @@ unsigned short btchip_apdu_hash_sign() {
             else {
                 btchip_write_u32_le(dataBuffer, lockTime);
                 btchip_write_u32_le(dataBuffer + 4, sighashType);
-                PRINTF("hash_sign: finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
+                //PRINTF("hash_sign: finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
 
                 cx_hash(&btchip_context_D.transactionHashFull.sha256.header, CX_LAST,
                     dataBuffer, sizeof(dataBuffer), hash1, 32);
-                PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
+                //PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
 
                 // Rehash
                 cx_sha256_init(&localHash);
                 cx_hash(&localHash.header, CX_LAST, hash1, sizeof(hash1), hash2, 32);
             }
 
-	    unsigned char test_hash[32] = {0x2b,0xc2,0x0a,0xb1,0x0f,0x27,0xe7,0x9e,0xd8,0x4c,0xef,0x8c,0x40,0x87,0xdd,0x50,0x59,0x51,0x03,0xf4,0xa8,0xeb,0xe9,0x3c,0x35,0x4b,0xec,0xc5,0xe2,0x4e,0xf9,0xca};
 
 
             PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
 
-	    PRINTF("Signing test_hash\n%.*H\n", sizeof(test_hash), test_hash);
-
-	    PRINTF("Public key:\n%.*H\n", sizeof(cx_ecfp_public_key_t), &btchip_public_key_D);
-	    PRINTF("Private key:\n%.*H\n", sizeof(cx_ecfp_private_key_t), &btchip_private_key_D);
-
             // Sign
             btchip_signverify_finalhash(
-                &btchip_private_key_D, 1, test_hash, sizeof(test_hash),
+                &btchip_private_key_D, 1, hash2, sizeof(hash2),
                 G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
 		                ((N_btchip.bkp.config.options &
 	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
@@ -180,16 +168,9 @@ unsigned short btchip_apdu_hash_sign() {
             btchip_context_D.outLength = G_io_apdu_buffer[1] + 2;
             G_io_apdu_buffer[btchip_context_D.outLength++] = sighashType;
 
-
-	    PRINTF("hash_sign: APDU buffer: \n%.*H\n", btchip_context_D.outLength, G_io_apdu_buffer);
-	    PRINTF("hash_sign: APDU buffer outlength: \n%u\n", btchip_context_D.outLength);
-	    //	    PRINTF("hash_sign: signature: \n%.*H\n", btchip_context_D.outLength, G_io_apdu_buffer);
-	    //	    PRINTF("hash_sign: signature length: \n%.*H\n", btchip_context_D.outLength, G_io_apdu_buffer);
-		    
-
 	    
 	    btchip_signverify_finalhash(
-					&btchip_public_key_D, 0, test_hash, sizeof(test_hash),
+					&btchip_public_key_D, 0, hash2, sizeof(hash2),
 					G_io_apdu_buffer, btchip_context_D.outLength-1,
 	    	    	                    ((N_btchip.bkp.config.options &
 	    	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
