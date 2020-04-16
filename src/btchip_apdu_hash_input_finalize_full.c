@@ -50,7 +50,6 @@ static bool check_output_displayable() {
 
     unsigned char valueStart, valueEnd, valueSize, scriptStart;
 
-    PRINTF("Getting value start\n");
     if(G_coin_config->kind == COIN_KIND_DGLD){
       valueStart=34;
       valueSize=8;
@@ -63,7 +62,6 @@ static bool check_output_displayable() {
       scriptStart=valueEnd;
     }
 
-    PRINTF("Getting amount\n");
     for (j = valueStart; j < valueEnd; j++) {
         if (btchip_context_D.currentOutput[j] != 0) {
             nullAmount = 0;
@@ -74,7 +72,6 @@ static bool check_output_displayable() {
     unsigned char* buffer = btchip_context_D.currentOutput + scriptStart;
 
     isOpReturn = btchip_output_script_is_op_return(buffer);
-
 
     if(G_coin_config->kind == COIN_KIND_DGLD){
       isNullScript = btchip_output_script_is_null(buffer);
@@ -90,7 +87,6 @@ static bool check_output_displayable() {
       isNullScript = false;
     }
 
-    //Don't add the amount to the total output if this is a DGLD fees script 
     if (!nullAmount && !isNullScript) {
       if(G_coin_config->kind == COIN_KIND_DGLD){
 	os_memmove(amount, btchip_context_D.currentOutput + valueStart, valueSize);
@@ -100,22 +96,6 @@ static bool check_output_displayable() {
       transaction_amount_add_be(btchip_context_D.totalOutputAmount,
 				btchip_context_D.totalOutputAmount, amount);
     }
-
-    //    PRINTF("Total output amount: : \n%.*H\n",sizeof(btchip_context_D.totalOutputAmount), btchip_context_D.totalOutputAmount);
-    //    PRINTF("Transaction amount: : \n%.*H\n",sizeof(btchip_context_D.transactionContext.transactionAmount), btchip_context_D.transactionContext.transactionAmount);
-
-    //    unsigned char amount_debug[8];
-    //    os_memmove(amount_debug,
-    //	       &btchip_context_D.transactionContext.transactionAmount,
-    //	       sizeof(amount_debug));
-    //    btchip_convert_hex_amount_to_displayable(amount_debug);
-    //    PRINTF("check_output_displayable");
-    //    PRINTF("Transaction amount: \n%.*H\n",sizeof(amount_debug),amount_debug);
-    //    os_memmove(amount_debug,
-    //	       &btchip_context_D.totalOutputAmount,
-    //	       sizeof(amount_debug));
-    //    btchip_convert_hex_amount_to_displayable(amount_debug);
-    //    PRINTF("Total output amount: \n%.*H\n",sizeof(amount_debug),amount_debug);
 
     if(!isNullScript){
       isP2sh = btchip_output_script_is_p2sh(buffer);
@@ -134,14 +114,15 @@ static bool check_output_displayable() {
 	  )
 	 ) {
 	PRINTF("Error : Unrecognized input script (check output displayable): \n%.*H\n", sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
-	     
-	//	\nisNativeSegwit: \n%.*H\nisOpCreate:\n%.*H\nisOpCall: \n%.*H\nnullAmount: \n%.*H\namount: \n%.*H\n",
-	
-	//	sizeof(isNativeSegwit),isNativeSegwit,
-	//	     sizeof(isOpCreate),isOpCreate,sizeof(isOpCall),isOpCall,
-	//	     sizeof(nullAmount),nullAmount,sizeof(amount),amount);
 	THROW(EXCEPTION);
       }
+
+      //TODO - implement these types of input scripts for DGLD
+      if((G_coin_config->kind == COIN_KIND_DGLD) &&
+	 (isP2sh || isNativeSegwit || isOpCreate || isOpCall)){
+	PRINTF("Error : Unrecognized input script for DGLD (check output displayable): \n%.*H\n", sizeof(btchip_context_D.currentOutput)-scriptStart,buffer);
+      }
+      
     }
     if (btchip_context_D.tmpCtx.output.changeInitialized && !isOpReturn) {
         bool changeFound = false;
@@ -189,7 +170,6 @@ static bool handle_output_state() {
     uint32_t discardSize = 0;
     btchip_context_D.discardSize = 0;
     bool processed = false;
-    PRINTF("handle_output_state: outputParsingState: %d\n", btchip_context_D.outputParsingState);
     switch (btchip_context_D.outputParsingState) {
     case BTCHIP_OUTPUT_PARSING_NUMBER_OUTPUTS: {
         btchip_context_D.totalOutputs = 0;
@@ -231,7 +211,6 @@ static bool handle_output_state() {
     } break;
 
     case BTCHIP_OUTPUT_PARSING_OUTPUT: {
-        PRINTF("parsing output\n");
         unsigned int scriptSize, scriptSizeOffset, scriptOffset;
 
 	if(G_coin_config->kind == COIN_KIND_DGLD){
@@ -243,7 +222,6 @@ static bool handle_output_state() {
 	scriptOffset=scriptSizeOffset+1;
 
 	if (btchip_context_D.currentOutputOffset < scriptOffset) {
-	  PRINTF("currentOutputOffset < scriptSizeOffset +1\n");
             break;
         }
 	
@@ -264,21 +242,16 @@ static bool handle_output_state() {
         }
         if (btchip_context_D.currentOutputOffset <
             scriptSizeOffset + discardSize + scriptSize) {
-            PRINTF("currentOutputOffset < scriptSizeOFFSET + discardSize + scriptSize\n");
             discardSize = 0;
             break;
         }
 
 
-	PRINTF("scriptSize: %d\n", scriptSize);
-
         processed = true;
 
         discardSize += scriptSizeOffset + scriptSize;
 	
-	PRINTF("checking output is displayable\n");
         if (check_output_displayable()) {
-	    PRINTF("output is displayable\n");
             btchip_context_D.io_flags |= IO_ASYNCH_REPLY;
 
             // The output can be processed by the UI
@@ -286,9 +259,7 @@ static bool handle_output_state() {
             btchip_context_D.discardSize = discardSize;
             discardSize = 0;
         } else {
-	    PRINTF("output is not displayable\n");
             btchip_context_D.remainingOutputs--;
-	    PRINTF("user_action: remaining op: %d:",btchip_context_D.remainingOutputs); 
         }
     } break;
 
@@ -308,8 +279,6 @@ static bool handle_output_state() {
 
 unsigned short btchip_apdu_hash_input_finalize_full_internal(
     btchip_transaction_summary_t *transactionSummary) {
-    PRINTF("transactionState_fi_1=%d\n", btchip_context_D.transactionContext.transactionState);
-    PRINTF("outputParsingStateState_fi_1=%d\n", btchip_context_D.outputParsingState);
   
     unsigned char authorizationHash[32];
     unsigned char apduLength;
@@ -325,8 +294,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
 
     apduLength = G_io_apdu_buffer[ISO_OFFSET_LC];
 
-    PRINTF("transactionState_fi_2=%d\n", btchip_context_D.transactionContext.transactionState);
-    PRINTF("outputParsingStateState_fi_2=%d\n", btchip_context_D.outputParsingState);
     
     if ((p1 != FINALIZE_P1_MORE) && (p1 != FINALIZE_P1_LAST) &&
         (p1 != FINALIZE_P1_CHANGEINFO)) {
@@ -405,8 +372,7 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                     btchip_context_D.outputParsingState = BTCHIP_BIP44_CHANGE_PATH_VALIDATION;
                     btchip_bagl_request_change_path_approval(transactionSummary->summarydata.keyPath);
                 }
-		PRINTF("outputParsingStateState_fi_3=%d\n", btchip_context_D.outputParsingState);
-		PRINTF("transactionState_fi_3=%d\n", btchip_context_D.transactionContext.transactionState);
+
                 goto return_OK;
             }
 
@@ -419,7 +385,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                 }
                 else {
 		      
-		  PRINTF("hash_input_finalize_full: add to tx hash full\n%.*H\n",apduLength - hashOffset,G_io_apdu_buffer + ISO_OFFSET_CDATA + hashOffset);
                     cx_hash(&btchip_context_D.transactionHashFull.sha256.header, 0,
                         G_io_apdu_buffer + ISO_OFFSET_CDATA + hashOffset,
                         apduLength - hashOffset, NULL, 0);
@@ -427,8 +392,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
             }
 
             if (btchip_context_D.transactionContext.firstSigned) {
-	      PRINTF("outputParsingStateState_fi_4=%d\n", btchip_context_D.outputParsingState);
-	      PRINTF("transactionState_fi_4=%d\n", btchip_context_D.transactionContext.transactionState);
                 if ((btchip_context_D.currentOutputOffset + apduLength) >
                     sizeof(btchip_context_D.currentOutput)) {
                     PRINTF("Output is too long to be checked\n");
@@ -440,8 +403,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                            G_io_apdu_buffer + ISO_OFFSET_CDATA, apduLength);
                 btchip_context_D.currentOutputOffset += apduLength;
 
-		PRINTF("multipleOutput==%d\n", btchip_context_D.tmpCtx.output.multipleOutput);
-		
                 // Check if the legacy UI can be applied
                 if (!(G_coin_config->kind == COIN_KIND_QTUM) &&
                     (G_io_apdu_buffer[ISO_OFFSET_P1] == FINALIZE_P1_LAST) &&
@@ -450,16 +411,14 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                     btchip_context_D.io_flags |= IO_ASYNCH_REPLY;
                     btchip_context_D.outputParsingState =
                         BTCHIP_OUTPUT_HANDLE_LEGACY;
-		    PRINTF("Legacy can be applied - outputParsingStateState==%d\n", btchip_context_D.outputParsingState);
                     btchip_context_D.remainingOutputs = 0;
                 } else {
-		  PRINTF("Handling remaining outputs\n");
                     while (handle_output_state() &&
                            (!(btchip_context_D.io_flags & IO_ASYNCH_REPLY)))
                         ;
 
                     // Finalize the TX if necessary
-		    PRINTF("remainingOutputs=%d\n", btchip_context_D.remainingOutputs);
+
                     if ((btchip_context_D.remainingOutputs == 0) &&
                         (!(btchip_context_D.io_flags & IO_ASYNCH_REPLY))) {
                         btchip_context_D.io_flags |= IO_ASYNCH_REPLY;
@@ -479,8 +438,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                 G_io_apdu_buffer[0] = 0x00;
                 btchip_context_D.outLength = 1;
                 btchip_context_D.tmpCtx.output.multipleOutput = 1;
-		PRINTF("transactionState_fi_5=%d\n", btchip_context_D.transactionContext.transactionState);
-		PRINTF("outputParsingStateState_fi_5=%d\n", btchip_context_D.outputParsingState);
                 goto return_OK;
             }
 
@@ -500,7 +457,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                             CX_LAST,
                             btchip_context_D.segwit.cache.hashedOutputs, 0,
                             btchip_context_D.segwit.cache.hashedOutputs, 32);
-			PRINTF("init tx hash\n");
                         cx_sha256_init(&btchip_context_D.transactionHashFull.sha256);
                         cx_hash(&btchip_context_D.transactionHashFull.sha256.header,
                             CX_LAST,
@@ -533,16 +489,9 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                 transactionSummary->payToScriptHashVersion =
                     btchip_context_D.payToScriptHashVersion;
 
-		PRINTF("payToAddressVersion\n%u\n",transactionSummary->payToAddressVersion);
-		PRINTF("payToScriptHashVersion\n%u\n",transactionSummary->payToScriptHashVersion);
-		
                 // Generate new nonce
 
                 cx_rng(transactionSummary->summarydata.transactionNonce, 8);
-
-		PRINTF("transactionNonce\n%.*H\n",
-		       sizeof(transactionSummary->summarydata.transactionNonce),
-                       transactionSummary->summarydata.transactionNonce);
             }
 
             G_io_apdu_buffer[0] = 0x00;
@@ -564,8 +513,6 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
 
                 goto return_OK;
             } else {
-	      PRINTF("transactionState_fi_6=%d\n", btchip_context_D.transactionContext.transactionState);
-	      PRINTF("outputParsingStateState_fi_6=%d\n", btchip_context_D.outputParsingState);
                 if (btchip_secure_memcmp(
                         authorizationHash,
                         transactionSummary->authorizationHash,
@@ -574,13 +521,9 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                     sw = BTCHIP_SW_CONDITIONS_OF_USE_NOT_SATISFIED;
                 discardTransaction:
                     CLOSE_TRY;
-		    PRINTF("transactionState_fi_7=%d\n", btchip_context_D.transactionContext.transactionState);
-		    PRINTF("outputParsingStateState_fi_7=%d\n", btchip_context_D.outputParsingState);
                     goto catch_discardTransaction;
                 }
             }
-	    PRINTF("transactionState_fi_8=%d\n", btchip_context_D.transactionContext.transactionState);
-	    PRINTF("outputParsingStateState_fi_8=%d\n", btchip_context_D.outputParsingState);
             if (btchip_context_D.usingSegwit &&
                 !btchip_context_D.segwitParsedOnce) {
                 // This input cannot be signed when using segwit - just restart.
@@ -592,9 +535,7 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
                 btchip_context_D.transactionContext.transactionState =
                     BTCHIP_TRANSACTION_SIGN_READY;
             }
-	    PRINTF("transactionState_fi_9=%d\n", btchip_context_D.transactionContext.transactionState);
-	    PRINTF("outputParsingStateState_fi_9=%d\n", btchip_context_D.outputParsingState);
-            sw = BTCHIP_SW_OK;
+	    sw = BTCHIP_SW_OK;
         }
         CATCH_ALL {
             sw = SW_TECHNICAL_DETAILS(0x0F);
@@ -616,36 +557,28 @@ unsigned short btchip_apdu_hash_input_finalize_full_internal(
 }
 
 unsigned short btchip_apdu_hash_input_finalize_full() {
-    PRINTF("transactionState1=%d\n", btchip_context_D.transactionContext.transactionState);
-    PRINTF("outputParsingStateState1=%d\n", btchip_context_D.outputParsingState);
+    PRINTF("state=%d\n", btchip_context_D.outputParsingState); 
     unsigned short sw = btchip_apdu_hash_input_finalize_full_internal(
         &btchip_context_D.transactionSummary);
-    PRINTF("transactionState2=%d\n", btchip_context_D.transactionContext.transactionState);
-    PRINTF("outputParsingStateState2=%d\n", btchip_context_D.outputParsingState);
     if (btchip_context_D.io_flags & IO_ASYNCH_REPLY) {
         // if the UI reject the processing of the request, then reply
         // immediately
         bool status;
         if(btchip_context_D.outputParsingState == BTCHIP_BIP44_CHANGE_PATH_VALIDATION) {
-	    PRINTF("parsing number outputs tx\n");     
             btchip_context_D.outputParsingState = BTCHIP_OUTPUT_PARSING_NUMBER_OUTPUTS;
             return sw;
         }
         else if (btchip_context_D.outputParsingState == BTCHIP_OUTPUT_FINALIZE_TX) {
-            PRINTF("finalizing tx\n");     
             status = btchip_bagl_finalize_tx();
         } else if (btchip_context_D.outputParsingState ==
                    BTCHIP_OUTPUT_HANDLE_LEGACY) {
 
-	    PRINTF("confirming full output\n");     
             status = btchip_bagl_confirm_full_output();
         }
         else {
-	    PRINTF("confirming single output\n");     
-	    status = btchip_bagl_confirm_single_output();
+	     status = btchip_bagl_confirm_single_output();
         }
         if (!status) {
-	    PRINTF("status error\n");     
             btchip_context_D.io_flags &= ~IO_ASYNCH_REPLY;
             btchip_context_D.transactionContext.transactionState =
                 BTCHIP_TRANSACTION_NONE;
@@ -653,8 +586,6 @@ unsigned short btchip_apdu_hash_input_finalize_full() {
             sw = BTCHIP_SW_INCORRECT_DATA;
         }
     }
-    PRINTF("transactionState3=%d\n", btchip_context_D.transactionContext.transactionState);
-    PRINTF("outputParsingState3=%d\n", btchip_context_D.outputParsingState);
     return sw;
 }
 
@@ -671,8 +602,7 @@ unsigned char btchip_bagl_user_action(unsigned char confirming) {
         }
 
         while (btchip_context_D.remainingOutputs != 0) {
-	  PRINTF("user_action: remaining op: %d:",btchip_context_D.remainingOutputs); 
-	    os_memmove(btchip_context_D.currentOutput,
+	     os_memmove(btchip_context_D.currentOutput,
                        btchip_context_D.currentOutput +
                            btchip_context_D.discardSize,
                        btchip_context_D.currentOutputOffset -
@@ -685,20 +615,16 @@ unsigned char btchip_bagl_user_action(unsigned char confirming) {
                 ;
             if (btchip_context_D.io_flags & IO_ASYNCH_REPLY) {
                 if (!btchip_bagl_confirm_single_output()) {
-		    PRINTF("user_action: confirm single output result = false"); 
-		    btchip_context_D.transactionContext.transactionState =
-		      BTCHIP_TRANSACTION_NONE;
+		   btchip_context_D.transactionContext.transactionState =
+		       BTCHIP_TRANSACTION_NONE;
                     sw = BTCHIP_SW_INCORRECT_DATA;
                     break;
                 } else {
-		    PRINTF("user_action: confirmed a single output"); 
                     // Let the UI play
                     return 1;
                 }
             } else {
                 // Out of data to process, wait for the next call
-	        PRINTF("user_action: out of data to process, wait for next call");
-		PRINTF("user_action: remaining op: %d:",btchip_context_D.remainingOutputs); 
                 break;
             }
         }
@@ -708,7 +634,6 @@ unsigned char btchip_bagl_user_action(unsigned char confirming) {
             (btchip_context_D.remainingOutputs == 0)) {
             btchip_context_D.outputParsingState = BTCHIP_OUTPUT_FINALIZE_TX;
             if (!btchip_bagl_finalize_tx()) {
-	        PRINTF("user_action: finalize_tx: false"); 
                 btchip_context_D.outputParsingState =
                     BTCHIP_OUTPUT_PARSING_NONE;
                 btchip_context_D.transactionContext.transactionState =
@@ -716,7 +641,6 @@ unsigned char btchip_bagl_user_action(unsigned char confirming) {
                 sw = BTCHIP_SW_INCORRECT_DATA;
             } else {
                 // Let the UI play
-	        PRINTF("user_action: finalize_tx: true"); 
                 return 1;
             }
         }
@@ -755,11 +679,9 @@ unsigned char btchip_bagl_user_action(unsigned char confirming) {
         (btchip_context_D.outputParsingState == BTCHIP_OUTPUT_HANDLE_LEGACY) ||
         (sw != BTCHIP_SW_OK)) {
         // we've finished the processing of the input
-        PRINTF("user_action: processing finished\n"); 
         btchip_apdu_hash_input_finalize_full_reset();
     }
 
-    PRINTF("user_action: io_exchange\n"); 
     io_exchange(CHANNEL_APDU | IO_RETURN_AFTER_TX, btchip_context_D.outLength);
 
     return 0;

@@ -126,8 +126,6 @@ unsigned short btchip_apdu_hash_sign() {
                 }
             }
 
-            // Read transaction parameters
-
             // Fetch the private key
 
             btchip_private_derive_keypair(keyPath, 0, NULL);
@@ -143,39 +141,36 @@ unsigned short btchip_apdu_hash_sign() {
             else {
                 btchip_write_u32_le(dataBuffer, lockTime);
                 btchip_write_u32_le(dataBuffer + 4, sighashType);
-                //PRINTF("hash_sign: finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
+                PRINTF("Finalize hash with\n%.*H\n", sizeof(dataBuffer), dataBuffer);
 
                 cx_hash(&btchip_context_D.transactionHashFull.sha256.header, CX_LAST,
                     dataBuffer, sizeof(dataBuffer), hash1, 32);
-                //PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
+                PRINTF("Hash1\n%.*H\n", sizeof(hash1), hash1);
 
                 // Rehash
                 cx_sha256_init(&localHash);
                 cx_hash(&localHash.header, CX_LAST, hash1, sizeof(hash1), hash2, 32);
             }
-
-
-
             PRINTF("Hash2\n%.*H\n", sizeof(hash2), hash2);
 
             // Sign
             btchip_signverify_finalhash(
                 &btchip_private_key_D, 1, hash2, sizeof(hash2),
                 G_io_apdu_buffer, sizeof(G_io_apdu_buffer),
-		                ((N_btchip.bkp.config.options &
-	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
+		 ((N_btchip.bkp.config.options &
+          	   BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
 
             btchip_context_D.outLength = G_io_apdu_buffer[1] + 2;
             G_io_apdu_buffer[btchip_context_D.outLength++] = sighashType;
 
-	    
+	    //Verify the signature
 	    btchip_signverify_finalhash(
 					&btchip_public_key_D, 0, hash2, sizeof(hash2),
 					G_io_apdu_buffer, btchip_context_D.outLength-1,
-	    	    	                    ((N_btchip.bkp.config.options &
-	    	                      BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
-
-	    sw = BTCHIP_SW_OK;
+					((N_btchip.bkp.config.options &
+					  BTCHIP_OPTION_DETERMINISTIC_SIGNATURE) != 0));
+	    
+	     sw = BTCHIP_SW_OK;
 
             // Then discard the transaction and reply
         }
