@@ -128,6 +128,10 @@
 #define BITID_DERIVE 0xB11D
 #define BITID_DERIVE_MULTIPLE 0xB11E
 
+#define DGLD_MINUS_1 4294967295 //== 2**32 - 1
+#define DGLD_OUTPOINT_ISSUANCE_FLAG 2147483648 //== 1<<31
+#define DGLD_OUTPOINT_INDEX_MASK 0x3fffffff //== 1<<31 
+
 #include "os.h"
 #include "btchip_secure_value.h"
 

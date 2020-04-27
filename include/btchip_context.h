@@ -113,7 +113,7 @@ struct segwit_cache_s {
  */
 struct btchip_transaction_context_s {
     /** Transient over signing components */
-
+  
     /** Remaining number of inputs/outputs to process for this transaction */
     unsigned long int transactionRemainingInputsOutputs;
     /** Index of the currently processed input/output for this transaction */
@@ -141,7 +141,7 @@ struct btchip_transaction_context_s {
     /** The asset type */
     unsigned char transactionAsset[33];
     /** Transaction output nonce */
-    unsigned char transactionOutputNonce;    
+    unsigned char transactionOutputNonce;
 };
 typedef struct btchip_transaction_context_s btchip_transaction_context_t;
 
@@ -251,6 +251,9 @@ struct btchip_context_s {
     unsigned char totalOutputAmount[8];
     unsigned char changeOutputFound;    
 
+    /** DGLD - current input has issuance? **/
+    unsigned char inputHasIssuance;
+  
     /* Overwinter */
     unsigned char usingOverwinter;
     unsigned char overwinterSignReady;
