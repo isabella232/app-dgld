@@ -1,4 +1,4 @@
-/***********ch********************************************************************
+/*******************************************************************************
 *   Ledger App - Bitcoin Wallet
 *   (c) 2016-2019 Ledger
 *
@@ -23,6 +23,11 @@
 #define CONSENSUS_BRANCH_ID_ZCLASSIC 0x930b540d
 
 #define DEBUG_LONG "%d"
+
+void get_issuance(unsigned char* pbuf){
+  unsigned long int n_output = btchip_read_u32(pbuf, 0, 0);
+  btchip_context_D.inputHasIssuance= ((n_output != DGLD_MINUS_1) && (n_output & DGLD_OUTPOINT_ISSUANCE_FLAG));
+}
 
 void check_transaction_available(unsigned char x) {
     if (btchip_context_D.transactionDataRemaining < x) {
@@ -308,6 +313,7 @@ void transaction_parse(unsigned char parseMode) {
 */
 		  
                 case BTCHIP_TRANSACTION_DEFINED_WAIT_INPUT: {
+		    btchip_context_D.inputHasIssuance = 0;
                     unsigned char trustedInputFlag = 1;
 		    //                    PRINTF("Process input\n");
                     if (btchip_context_D.transactionContext
@@ -323,9 +329,11 @@ void transaction_parse(unsigned char parseMode) {
                     }
                     // Proceed with the next input
                     if (parseMode == PARSE_MODE_TRUSTED_INPUT) {
-		         check_transaction_available(
-                            36); // prevout : 32 hash + 4 index
-                        transaction_offset_increase(36);
+		         check_transaction_available(36); // prevout : 32 hash + 4 index
+			 if(G_coin_config->kind == COIN_KIND_DGLD){
+			   get_issuance(btchip_context_D.transactionBufferPointer+32);
+			 }
+			 transaction_offset_increase(36);
                     }
                     if (parseMode == PARSE_MODE_SIGNATURE) {
                         unsigned char trustedInputLength;
@@ -618,7 +626,10 @@ void transaction_parse(unsigned char parseMode) {
                         transaction_offset_increase(4);
 
 			//Additional "issuance" data to be read here if this is an DGLD
-                        //issuance transaction - TODO 
+			if(G_coin_config->kind == COIN_KIND_DGLD && btchip_context_D.inputHasIssuance){
+			  check_transaction_available(82);
+			  transaction_offset_increase(82);
+			}
 			
                         // Move to next input
                         btchip_context_D.transactionContext
