@@ -1,3 +1,11 @@
+# Ledger DGLD app
+This is the DGLD Nano S app, forked from ledger-app-btc (see below).
+
+To build the app in a docker image and load it onto the ledger:
+
+./build.sh
+./load.sh
+
 # ledger-app-btc
 Bitcoin wallet application for Ledger Blue and Nano S
 
