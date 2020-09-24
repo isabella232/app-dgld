@@ -49,7 +49,7 @@ RUN make
 
 WORKDIR /
 RUN cd /
-COPY ledger-app-dgld /ledger-app-dgld
+COPY app /app
 COPY apploader /apploader
 WORKDIR /apploader
 
