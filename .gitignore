@@ -2,6 +2,6 @@ bin
 debug
 dep
 obj
-src/glyphs.c
-src/glyphs.h
+app/src/glyphs.c
+app/src/glyphs.h
 
